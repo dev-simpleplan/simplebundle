@@ -10,7 +10,7 @@ export async function updateBundle(request, formData) {
   const updateBundleData = JSON.parse(formData.get('formData'));
 
   try {
-    const bundle = await prisma.bundle.findFirst({
+    const bundle = await prisma.bundle.findUnique({
       where: {
         id: updateBundleData.idInDb,
       }
@@ -20,19 +20,17 @@ export async function updateBundle(request, formData) {
       throw new Error("Bundle not found");
     }
 
-    await updateBundleInDatabase(updateBundleData);
-
     const updateProductResponse = await admin.graphql(UPDATE_PRODUCT_BUNDLE_MUTATION, {
       variables: {
-        "input": {
-          "productId": updateBundleData.id,
-          "components": updateBundleData.products.map((product) => ({
-            "quantity": product.quantity,
-            "productId": product.id,
-            "optionSelections": product.options.map((option) => ({
-              "componentOptionId": option.id,
-              "name":  `${option.name}`,
-              "values": option.values
+        input: {
+          productId: updateBundleData.id,
+          components: updateBundleData.products.map((product) => ({
+            quantity: product.quantity,
+            productId: product.id,
+            optionSelections: product.options.map((option) => ({
+              componentOptionId: option.id,
+              name: `${product.title} ${option.name}`,
+              values: option.values
             }))
           }))
         }
@@ -41,25 +39,20 @@ export async function updateBundle(request, formData) {
 
     const updatedProductBundleData = await handleGraphQLResponse(updateProductResponse, "Error updating product bundle");
 
-    // Poll for job completion
     const pollData = await pollJobStatus(admin, updatedProductBundleData.productBundleUpdate.productBundleOperation.id, {
       jobPollerQuery: JOB_POLLER_QUERY,
       onComplete: (operation) => operation,
     });
 
-    // Extract variants from poll data
     const variants = pollData.product.variants.edges.map(edge => edge.node);
 
-    // Calculate price change
-    const oldProducts = JSON.parse(bundle.products);
+    const oldProducts = Array.isArray(bundle.products) ? bundle.products : JSON.parse(bundle.products);
     const priceChange = calculatePriceChange(oldProducts, updateBundleData.products);
 
-    // Update variant prices
     const updatedVariants = variants.map(variant => {
       const oldCompareAtPrice = parseFloat(variant.compareAtPrice || variant.price);
       const newCompareAtPrice = oldCompareAtPrice + priceChange;
       
-      // Check if there's no discount
       const noDiscount = updateBundleData.noDiscount || (!updateBundleData.discountType && !updateBundleData.discountValue);
       
       return {
@@ -84,12 +77,15 @@ export async function updateBundle(request, formData) {
 
     await handleGraphQLResponse(updateVariantsResponse, "Error updating variant prices");
 
-    // Update variants and products in database
+    // now update in db
+
+    await updateBundleInDatabase(updateBundleData);
+
     await prisma.bundle.update({
       where: { id: updateBundleData.idInDb },
       data: {
-        variants: JSON.stringify(updatedVariants),
-        products: JSON.stringify(updateBundleData.products),
+        variants: updatedVariants,
+        products: updateBundleData.products,
         discountType: updateBundleData.noDiscount ? null : updateBundleData.discountType,
         discountValue: updateBundleData.noDiscount ? null : updateBundleData.discountValue
       }
@@ -116,22 +112,17 @@ function calculatePriceChange(oldProducts, newProducts) {
   
   let priceChange = 0;
 
-  // Check for removed or changed products
   oldProducts.forEach(oldProduct => {
     const newProduct = newProductMap.get(oldProduct.id);
     if (!newProduct) {
-      // Product was removed
       priceChange -= getProductPrice(oldProduct) * oldProduct.quantity;
     } else if (oldProduct.quantity !== newProduct.quantity) {
-      // Quantity changed
       priceChange += (newProduct.quantity - oldProduct.quantity) * getProductPrice(oldProduct);
     }
   });
 
-  // Check for added products
   newProducts.forEach(newProduct => {
     if (!oldProductMap.has(newProduct.id)) {
-      // New product added
       priceChange += getProductPrice(newProduct) * newProduct.quantity;
     }
   });

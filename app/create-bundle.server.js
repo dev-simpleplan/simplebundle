@@ -10,12 +10,10 @@ import { calculateDiscountedPrice, getMediaContentType, pollJobStatus, handleGra
 
 // Main function
 export async function createBundle(request, formData) {
-  const { admin } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const bundleData = JSON.parse(formData.get('formData'));
 
   try {
-    const session = await getSession();
-
     // Create the product bundle in Shopify first
     const productBundleData = await createProductBundle(admin, bundleData);
     const pollData = await pollJobStatus(admin, productBundleData.jobId, {
@@ -53,15 +51,6 @@ export async function createBundle(request, formData) {
     console.error("Error creating bundle:", error);
     throw error;
   }
-}
-
-// Supporting functions
-async function getSession() {
-  const session = await prisma.session.findFirst();
-  if (!session) {
-    throw new Error("No session found. Please ensure you have at least one session in the database.");
-  }
-  return session;
 }
 
 async function createBundleInDatabase(bundleData, userId, productId, productHandle) {

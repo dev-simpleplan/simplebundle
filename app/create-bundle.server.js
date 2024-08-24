@@ -15,18 +15,23 @@ export async function createBundle(request, formData) {
 
   try {
     const session = await getSession();
-    const createdBundle = await createBundleInDatabase(bundleData, session.id);
 
+    // Create the product bundle in Shopify first
     const productBundleData = await createProductBundle(admin, bundleData);
     const pollData = await pollJobStatus(admin, productBundleData.jobId, {
       jobPollerQuery: JOB_POLLER_QUERY,
       onComplete: (operation) => operation,
     });
 
+    if (!pollData.product || !pollData.product.id) {
+      throw new Error("Failed to create product bundle in Shopify");
+    }
+
     const productId = pollData.product.id;
     const productHandle = pollData.product.handle;
 
-    await updateBundleWithProductId(createdBundle.id, productId, productHandle);
+    // Now create the bundle in the database
+    const createdBundle = await createBundleInDatabase(bundleData, session.id, productId, productHandle);
 
     const { uploadedFiles, productImages } = separateMediaFiles(bundleData.media, formData);
 
@@ -59,28 +64,19 @@ async function getSession() {
   return session;
 }
 
-async function createBundleInDatabase(bundleData, userId) {
+async function createBundleInDatabase(bundleData, userId, productId, productHandle) {
   const offerData = {
-    ProductBundleId: null,
+    ProductBundleId: productId,
+    ProductHandle: productHandle,
     bundleName: bundleData.bundleName,
     description: bundleData.description,
     discountType: bundleData.noDiscount ? null : bundleData.discountType,
     discountValue: bundleData.noDiscount ? null : bundleData.discountValue,
-    products: JSON.stringify(bundleData.products),
+    products: bundleData.products,
     userId: userId,
   };
   
   return await prisma.bundle.create({ data: offerData });
-}
-
-async function updateBundleWithProductId(bundleId, productId, productHandle) {
-  await prisma.bundle.update({
-    where: { id: bundleId },
-    data: {
-      ProductBundleId: productId,
-      ProductHandle: productHandle
-    }
-  });
 }
 
 async function createProductBundle(admin, bundleData) {
@@ -93,7 +89,7 @@ async function createProductBundle(admin, bundleData) {
           productId: product.id,
           optionSelections: product.options.map((option) => ({
             componentOptionId: option.id,
-            name: `${option.name}`,
+            name: `${product.title} ${option.name}`,
             values: option.values
           }))
         }))
@@ -253,7 +249,7 @@ async function updateVariantsInDatabase(bundleId, variants) {
   await prisma.bundle.update({
     where: { id: bundleId },
     data: {
-      variants: JSON.stringify(variants)
+      variants: variants
     }
   });
 }

@@ -27,6 +27,7 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
   bundles       Bundle[]
+  analytics     Analytics[]
   onboarding    Boolean   @default(false)
 }
 

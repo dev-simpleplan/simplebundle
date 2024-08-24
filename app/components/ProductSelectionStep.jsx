@@ -30,7 +30,6 @@ export default function ProductSelectionStep({ formData, setFormData, errors, se
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProductId, setCurrentProductId] = useState(null);
   const [currentOptionId, setCurrentOptionId] = useState(null);
-  const [selectedDefaultValue, setSelectedDefaultValue] = useState('');
   const [currentProductName, setCurrentProductName] = useState('');
   const [currentOptionName, setCurrentOptionName] = useState('');
 
@@ -74,9 +73,14 @@ export default function ProductSelectionStep({ formData, setFormData, errors, se
     return limits;
   }, []);
 
+  const validateQuantities = useCallback((products) => {
+    return products.some(product => product.quantity <= 0);
+  }, []);
+
   useEffect(() => {
     const newErrors = validateProducts(formData.products);
     const newLimits = calculateBundleLimits(formData.products);
+    const hasQuantityErrors = validateQuantities(formData.products);
 
     setLocalErrors(newErrors);
     setBundleLimits(newLimits);
@@ -85,10 +89,16 @@ export default function ProductSelectionStep({ formData, setFormData, errors, se
 
     setErrors(prevErrors => ({
       ...prevErrors,
-      products: Object.keys(newErrors).length > 0 ? "Please ensure all products have at least one option selected" : null,
-      limits: hasLimitErrors ? "Bundle exceeds Shopify's limits" : null
+      products: formData.products.length === 0 
+        ? "At least one product must be selected" 
+        : Object.keys(newErrors).length > 0 
+          ? "Please ensure all products have at least one option selected" 
+          : hasQuantityErrors
+            ? "Please ensure all product quantities are greater than 0"
+            : null,
+      limits: hasLimitErrors
     }));
-  }, [formData.products, setErrors, validateProducts, calculateBundleLimits, setBundleLimits]);
+  }, [formData.products, setErrors, validateProducts, calculateBundleLimits, setBundleLimits, validateQuantities]);
 
   const handleProductSelection = useCallback(async () => {
     try {
@@ -140,10 +150,12 @@ export default function ProductSelectionStep({ formData, setFormData, errors, se
   }, [app, formData.products, setFormData, setErrors]);
 
   const handleQuantityChange = useCallback((id, quantity) => {
+    const newQuantity = quantity === '' ? '' : parseInt(quantity, 10);
+    
     setFormData((prev) => ({
       ...prev,
       products: prev.products.map(product =>
-        product.id === id ? { ...product, quantity: parseInt(quantity, 10) || 1 } : product
+        product.id === id ? { ...product, quantity: newQuantity || '' } : product
       ),
     }));
   }, [setFormData]);
@@ -218,10 +230,8 @@ export default function ProductSelectionStep({ formData, setFormData, errors, se
       return { ...prev, products: updatedProducts };
     });
 
-    console.log(`Set default value: ${value} for product ${currentProductName}, option ${currentOptionName}`);
     setIsModalOpen(false);
-    setSelectedDefaultValue('');
-  }, [currentProductId, currentOptionId, currentProductName, currentOptionName, setFormData]);
+  }, [currentProductId, currentOptionId, setFormData]);
 
   const renderProductItem = (item) => {
     const { id, title, vendor, images, quantity, options } = item;
@@ -235,6 +245,7 @@ export default function ProductSelectionStep({ formData, setFormData, errors, se
     );
 
     const customOptions = options.filter(option => option.name.toLowerCase() !== 'title');
+    const quantityError = quantity <= 0 ? "Quantity must be greater than 0" : null;
 
     return (
       <ResourceItem
@@ -258,7 +269,9 @@ export default function ProductSelectionStep({ formData, setFormData, errors, se
                 type="number"
                 value={quantity.toString()}
                 onChange={(value) => handleQuantityChange(id, value)}
-                min={1}
+                error={quantityError}
+                autoComplete="off"
+                min="1"
                 labelHidden
               />
               {customOptions.length > 0 && (
@@ -289,6 +302,7 @@ export default function ProductSelectionStep({ formData, setFormData, errors, se
               />
             </InlineStack>
           </InlineStack>
+
           {customOptions.length > 0 ? (
             customOptions.map((option) => (
               <BlockStack key={option.id} gap="200">
@@ -336,7 +350,11 @@ export default function ProductSelectionStep({ formData, setFormData, errors, se
           )}
         </InlineStack>
         {errors.products && <Banner status="critical">{errors.products}</Banner>}
-        {errors.limits && <Banner status="warning">{errors.limits}</Banner>}
+        {errors.limits && (
+          <Banner status="warning">
+            Bundle exceeds Shopify's limits. Please reduce the number of products, options, or variants.
+          </Banner>
+        )}
         {formData.products.length > 0 ? (
           <ResourceList
             resourceName={{ singular: "product", plural: "products" }}
@@ -355,18 +373,10 @@ export default function ProductSelectionStep({ formData, setFormData, errors, se
             <p>Select products to include in your bundle.</p>
           </EmptyState>
         )}
-        {Object.keys(localErrors).length > 0 && (
-          <Banner status="critical">
-            Please ensure at least one option is selected for each product.
-          </Banner>
-        )}
       </BlockStack>
       <Modal
         open={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedDefaultValue('');
-        }}
+        onClose={() => setIsModalOpen(false)}
         title={`Select Default Value for ${currentOptionName}`}
       >
         <Modal.Section>

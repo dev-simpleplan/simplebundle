@@ -137,8 +137,9 @@ export default function CreateBundle() {
           newErrors.bundleName = "Bundle name is required";
         break;
       case 2:
-        if (formData.products.length === 0)
-          newErrors.products = "At least one product must be selected";
+        if (errors.products || errors.limits) {
+          return false;
+        }
         break;
       case 3:
         if (!formData.noDiscount) {
@@ -159,7 +160,7 @@ export default function CreateBundle() {
     }
     setErrors((prevErrors) => ({ ...prevErrors, ...newErrors }));
     return Object.keys(newErrors).length === 0;
-  }, [formData, step]);
+  }, [formData, step,errors.products, errors.limits]);
 
   const handleNextStep = useCallback(() => {
     if (validateStep()) {
@@ -337,10 +338,13 @@ export default function CreateBundle() {
                   </div>
                   <div>
                     {step < 4 ? (
-                      <Button onClick={handleNextStep} primary>
+                      <Button onClick={handleNextStep} primary
+                        disabled={step === 2 && (errors.products || errors.limits)}
+                      >
                         <InlineStack gap="200">
                           <Text>Next</Text>
                           <Icon source={ChevronRightIcon} />
+                          
                         </InlineStack>
                       </Button>
                     ) : (

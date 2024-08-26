@@ -4,23 +4,30 @@ import {
   TextField,
   Form,
   BlockStack,
-  Spinner
+  Spinner,
+  ChoiceList
 } from '@shopify/polaris';
+
 export function SupportModal({ open, onClose, onSubmit, isSubmitting, formErrors, shouldResetForm }) {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [requestType, setRequestType] = useState(['feature_request']);
+
   useEffect(() => {
     if (shouldResetForm) {
       setEmail('');
       setMessage('');
       setEmailError('');
+      setRequestType(['feature_request']);
     }
   }, [shouldResetForm]);
+
   const validateEmail = (email) => {
     const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return re.test(String(email).toLowerCase());
   };
+
   const handleEmailChange = useCallback((value) => {
     setEmail(value);
     if (value && !validateEmail(value)) {
@@ -29,6 +36,7 @@ export function SupportModal({ open, onClose, onSubmit, isSubmitting, formErrors
       setEmailError('');
     }
   }, []);
+
   const handleSubmit = () => {
     if (!validateEmail(email)) {
       setEmailError('Please enter a valid email address');
@@ -37,14 +45,18 @@ export function SupportModal({ open, onClose, onSubmit, isSubmitting, formErrors
     const formData = new FormData();
     formData.append('email', email);
     formData.append('message', message);
+    formData.append('requestType', requestType[0]);
     onSubmit(formData);
   };
+
   const handleClose = () => {
     setEmail('');
     setMessage('');
     setEmailError('');
+    setRequestType(['feature_request']);
     onClose();
   };
+
   return (
     <Modal
       open={open}
@@ -66,6 +78,15 @@ export function SupportModal({ open, onClose, onSubmit, isSubmitting, formErrors
       <Modal.Section>
         <Form onSubmit={handleSubmit}>
           <BlockStack gap="400">
+            <ChoiceList
+              title="Request type"
+              choices={[
+                {label: 'Feature Request', value: 'feature_request'},
+                {label: 'Support', value: 'support'},
+              ]}
+              selected={requestType}
+              onChange={setRequestType}
+            />
             <TextField
               label="Email"
               type="email"
@@ -84,7 +105,7 @@ export function SupportModal({ open, onClose, onSubmit, isSubmitting, formErrors
               multiline={4}
               autoComplete="off"
               error={formErrors?.message}
-              placeholder="How can we help you today?"
+              placeholder={requestType[0] === 'feature_request' ? "Describe the feature you'd like to see..." : "How can we help you today?"}
               disabled={isSubmitting}
               required
             />

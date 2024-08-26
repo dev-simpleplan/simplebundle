@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from "react";
-import { useLoaderData, useFetcher, useNavigation } from "@remix-run/react";
+import { useLoaderData, useFetcher } from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { fetchBundle } from "../fetch-bundle.server";
@@ -10,7 +10,7 @@ import prisma from "../db.server";
 import { UPDATE_PRODUCT_MUTATION } from "../api/UPDATE_PRODUCT_MUTATION";
 import { DELETE_PRODUCT_MUTATION } from "../api/DELETE_PRODUCT_MUTATION";
 import { handleGraphQLResponse } from "../utils/sharedUtils";
-import { fetchShopInfo } from '../fetchShopInfo.server';
+import { submitToGoogleSheets } from "../server/google-spreadsheet.server";
 
 export async function loader({ request }) {
   const { session } = await authenticate.admin(request);
@@ -18,21 +18,10 @@ export async function loader({ request }) {
   const sessionData = await prisma.session.findUnique({
     where: { id: session.id }
   });
-  const analytics = await prisma.analytics.findFirst({
-    where: { userId: session.id }
-  });
-  const dataAnalytics = await fetchShopInfo(request);
-  const currency =  dataAnalytics.data.shop.currencyCode
 
   const data = await fetchBundle(request);
   data.session = sessionData;
-  // return json(data);
-  return json({
-    data: data,
-    analytics: analytics || { revenue: '0', orders: '0', currency: currency },
-    currency: currency
-    
-  });
+  return json(data);
 }
 
 async function updateProductStatus(admin, productId, newStatus) {
@@ -65,6 +54,31 @@ export async function action({ request }) {
   const formData = await request.formData();
   const action = formData.get("action");
 
+  if (action === "submitSupportRequest") {
+    try {
+      const email = formData.get("email");
+      const message = formData.get("message");
+      const requestType = formData.get("requestType");
+      const timestamp = new Date().toISOString();
+      const shopDomain = session.shop;
+
+      if (!email || !message || !requestType) {
+        return json({ success: false, error: "Missing required fields" }, { status: 400 });
+      }
+
+      const result = await submitToGoogleSheets({ email, message, requestType, timestamp, shopDomain });
+
+      if (result.success) {
+        return json({ success: true, message: "Support request submitted successfully" });
+      } else {
+        return json({ success: false, error: result.error }, { status: 500 });
+      }
+    } catch (error) {
+      return json({ success: false, error: "Failed to submit support request" }, { status: 500 });
+    }
+  }
+
+
   if (action === "updateOnboarding") {
     try {
       await prisma.session.update({
@@ -73,7 +87,6 @@ export async function action({ request }) {
       });
       return redirect("/app/create-bundle");
     } catch (error) {
-      console.error("Failed to update onboarding status:", error);
       return json({ success: false, error: "Failed to update onboarding status" }, { status: 500 });
     }
   }
@@ -104,10 +117,9 @@ export async function action({ request }) {
 }
 
 export default function Dashboard() {
-  const {data, analytics, currency} = useLoaderData();
+  const data = useLoaderData();
   const fetcher = useFetcher();
   const app = useAppBridge();
-  const navigation = useNavigation();
 
   const products = useMemo(() => {
     return data?.data?.products?.edges || [];
@@ -137,15 +149,14 @@ export default function Dashboard() {
     }
   }, [fetcher.data, app]);
 
+  
+
   if (data.session?.onboarding) {
     return <DashboardUI 
       products={products} 
       onStatusChange={handleStatusChange} 
       onDeleteProduct={handleDeleteProduct}
       fetcher={fetcher}
-      analytics={analytics}
-      currency={currency}
-      
     />;
   }
 

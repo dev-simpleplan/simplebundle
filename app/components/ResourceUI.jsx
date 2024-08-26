@@ -13,6 +13,7 @@ import {
 } from '@shopify/polaris';
 import { ExternalIcon } from '@shopify/polaris-icons';
 import { SupportModal } from './SupportModal';
+
 export default function ResourceUI({ 
   onSupportSubmit, 
   formErrors, 
@@ -20,7 +21,8 @@ export default function ResourceUI({
   isModalOpen,
   onModalOpen,
   onModalClose,
-  shouldResetForm
+  shouldResetForm,
+
 }) {
   const quickStartSteps = [
     { text: 'Create Your First Bundle', url: '#create-bundle' },
@@ -28,12 +30,14 @@ export default function ResourceUI({
     { text: 'Design Bundle Display', url: '#design' },
     { text: 'Test and Launch', url: '#launch' },
   ];
+
   const helpfulLinks = [
     { text: 'Bundle Creation Guide', url: '#create-bundles' },
     { text: 'Best Practices', url: '#best-practices' },
     { text: 'FAQs', url: '#faqs' },
     { text: 'Video Tutorials', url: '#tutorials' }
   ];
+
   return (
     <Page title="Resources">
       <BlockStack gap="800">
@@ -105,14 +109,15 @@ export default function ResourceUI({
           </Layout.Section>
         </Layout>
       </BlockStack>
+
       <SupportModal 
-        open={isModalOpen} 
-        onClose={onModalClose} 
-        onSubmit={onSupportSubmit}
-        isSubmitting={isSubmitting}
-        formErrors={formErrors}
-        shouldResetForm={shouldResetForm}
-      />
+  open={isModalOpen} 
+  onClose={onModalClose} 
+  onSubmit={onSupportSubmit}
+  isSubmitting={isSubmitting}
+  formErrors={formErrors}
+  shouldResetForm={shouldResetForm}
+/>
     </Page>
   );
 }

@@ -13,13 +13,14 @@ import { RequestFeature } from "./RequestFeature";
 import { SyncWarning } from "./SyncWarning";
 import { ProductTable } from "./ProductTable";
 import { BundlesOverview } from "./BundlesOverview";
-export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher, analytics, currency}) => {
-  const totalRevenue = parseFloat(analytics.revenue);
-  const totalOrders =  parseFloat(analytics.orders);
+
+export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher}) => {
   const [showRequestFeature, setShowRequestFeature] = useState(true);
   const [showSyncWarning, setShowSyncWarning] = useState(true);
+
   const activeBundles = useMemo(() => products?.filter(({ node }) => node.status === 'ACTIVE').length ?? 0, [products]);
   const draftBundles = useMemo(() => products?.filter(({ node }) => node.status === 'DRAFT').length ?? 0, [products]);
+
   if (!products || products.length === 0) {
     return (
       <Page narrowWidth >
@@ -31,7 +32,7 @@ export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher
           ) : (
             <EmptyState
               heading="No Bundles found"
-              action={{content: 'Add Bundle', icon: PlusIcon,  url: '/app/create-bundle',}}
+              action={{content: 'Add product', icon: PlusIcon,  url: '/app/create-bundle',}}
               image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
             >
               <p>Create Bundle to see them here.</p>
@@ -42,6 +43,7 @@ export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher
       </Page>
     );
   }
+
   return (
     <Page fullWidth>
       <BlockStack gap="800">
@@ -50,6 +52,8 @@ export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher
             <RequestFeature 
               showBanner={showRequestFeature} 
               setShowBanner={setShowRequestFeature} 
+              fetcher={fetcher}
+
             />
           </Layout.Section>
           <Layout.Section>
@@ -63,9 +67,6 @@ export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher
               totalBundles={products.length}
               activeBundles={activeBundles}
               draftBundles={draftBundles}
-              revenue={totalRevenue}
-              orders ={totalOrders}
-              currency={currency}
             />
           </Layout.Section>
           <Layout.Section>

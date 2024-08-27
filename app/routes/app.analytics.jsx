@@ -1,13 +1,14 @@
 import Highcharts from 'highcharts';
 import { json } from "@remix-run/node";
-import { useLoaderData } from '@remix-run/react';
+import { useLoaderData, useNavigation } from '@remix-run/react';
 import { useEffect } from 'react';
 import { authenticate } from '../shopify.server';
 import prisma from '../db.server';
 import {
   Page,
   Layout,
-  BlockStack
+  BlockStack,
+  Spinner
 } from "@shopify/polaris";
 import { AnalyticsOverview } from '../components/AnalyticsOverview';
 import { fetchShopInfo } from '../fetchShopInfo.server';
@@ -29,6 +30,7 @@ export const loader = async ({ request }) => {
 
 export default function Analytics() {
   const { analytics, currency } = useLoaderData();
+   const navigation = useNavigation();
   const totalRevenue = parseFloat(analytics.revenue);
   const totalOrders =  parseFloat(analytics.orders);// Set totalOrders to 0 if there's no revenue
   const averageOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders) : 0;
@@ -96,6 +98,7 @@ export default function Analytics() {
 
   return (
     <>
+      {navigation.state !== "idle" ? <div className="loader-spinner"><Spinner accessibilityLabel="Spinner example" size="large" /></div> : <>
       <Page fullWidth>
         <BlockStack gap="800">
           <Layout>

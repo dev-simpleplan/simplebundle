@@ -32,7 +32,7 @@ export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher
           ) : (
             <EmptyState
               heading="No Bundles found"
-              action={{content: 'Add product', icon: PlusIcon,  url: '/app/create-bundle',}}
+              action={{content: 'Add Bundle', icon: PlusIcon,  url: '/app/create-bundle',}}
               image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
             >
               <p>Create Bundle to see them here.</p>

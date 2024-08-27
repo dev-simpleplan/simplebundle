@@ -24,19 +24,18 @@ export default function ResourceUI({
   shouldResetForm,
 
 }) {
-  const quickStartSteps = [
-    { text: 'Create Your First Bundle', url: '#create-bundle' },
-    { text: 'Set Pricing Strategy', url: '#pricing' },
-    { text: 'Design Bundle Display', url: '#design' },
-    { text: 'Test and Launch', url: '#launch' },
+   const quickStartSteps = [
+    { text: 'Create Your First Bundle', url: 'https://www.youtube.com/watch?v=ot0m0MN8eI8' },
+    { text: 'Set Pricing Strategy', url: 'https://www.youtube.com/watch?v=WilM3zxng2A' },
+    { text: 'Design Bundle Display', url: 'https://www.youtube.com/watch?v=l9XjGqqlp8k&t=2s' },
+    { text: 'Edit Your Bundle', url: 'https://www.youtube.com/watch?v=UpzjZwsvCNc' },
   ];
-
   const helpfulLinks = [
-    { text: 'Bundle Creation Guide', url: '#create-bundles' },
-    { text: 'Best Practices', url: '#best-practices' },
-    { text: 'FAQs', url: '#faqs' },
-    { text: 'Video Tutorials', url: '#tutorials' }
-  ];
+    { text: 'Bundle Creation Guide', url: 'https://www.youtube.com/watch?v=ot0m0MN8eI8' },
+    { text: 'Best Practices', url: 'https://www.simpleplanmedia.com/faq/' },
+    { text: 'FAQs', url: 'https://www.simpleplanmedia.com/faq/' },
+    { text: 'Video Tutorials', url: 'https://www.youtube.com/@SimpleBundle' }
+    ];
 
   return (
     <Page title="Resources">
@@ -97,15 +96,6 @@ export default function ResourceUI({
                 </Box>
               </BlockStack>
             </Card>
-            <Box paddingBlockStart="400">
-              <Card>
-                <img
-                  src="/api/placeholder/600/400"
-                  alt="SimpleBundle app showcase"
-                  style={{ width: '100%', height: 'auto' }}
-                />
-              </Card>
-            </Box>
           </Layout.Section>
         </Layout>
       </BlockStack>

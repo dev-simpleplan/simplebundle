@@ -98,7 +98,7 @@ export default function Analytics() {
 
   return (
     <>
-      {navigation.state !== "idle" ? <div className="loader-spinner"><Spinner accessibilityLabel="Spinner example" size="large" /></div> : <>
+      {navigation.state !== "idle" ? <div className="loader-spinner" style={{ position: 'fixed',height: '100%',width: '100',left: '0',top: '0',display: 'flex',flexDirection: 'column',justifyContent: 'center',alignItems: 'center' }}><Spinner accessibilityLabel="Spinner example" size="large" /></div> : <>
       <Page fullWidth>
         <BlockStack gap="800">
           <Layout>

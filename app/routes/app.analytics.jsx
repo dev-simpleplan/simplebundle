@@ -7,8 +7,7 @@ import prisma from '../db.server';
 import {
   Page,
   Layout,
-  BlockStack,
-  Spinner
+  BlockStack
 } from "@shopify/polaris";
 import { AnalyticsOverview } from '../components/AnalyticsOverview';
 import { fetchShopInfo } from '../fetchShopInfo.server';
@@ -30,7 +29,6 @@ export const loader = async ({ request }) => {
 
 export default function Analytics() {
   const { analytics, currency } = useLoaderData();
-   const navigation = useNavigation();
   const totalRevenue = parseFloat(analytics.revenue);
   const totalOrders =  parseFloat(analytics.orders);// Set totalOrders to 0 if there's no revenue
   const averageOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders) : 0;
@@ -98,7 +96,6 @@ export default function Analytics() {
 
   return (
     <>
-      {navigation.state !== "idle" ? <div className="loader-spinner" style={{ position: 'fixed',height: '100%',width: '100',left: '0',top: '0',display: 'flex',flexDirection: 'column',justifyContent: 'center',alignItems: 'center' }}><Spinner accessibilityLabel="Spinner example" size="large" /></div> : <>
       <Page fullWidth>
         <BlockStack gap="800">
           <Layout>

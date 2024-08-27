@@ -301,7 +301,6 @@ export default function CreateBundle() {
 
   return (
     <Page fullWidth>
-       {navigation.state !== "idle" ? <div className="loader-spinner" style={{ position: 'fixed',height: '100%',width: '100',left: '0',top: '0',display: 'flex',flexDirection: 'column',justifyContent: 'center',alignItems: 'center' }}><Spinner accessibilityLabel="Spinner example" size="large" /></div> : <>
       <BlockStack gap="800">
         <ProgressBar progress={(step / 4) * 100} size="small" tone="primary" />
         {errors.submit && (

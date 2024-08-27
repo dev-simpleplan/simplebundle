@@ -8,6 +8,7 @@ import {
   EmptyState,
   BlockStack,
 } from "@shopify/polaris";
+import { useNavigation } from '@remix-run/react';
 import { PlusIcon } from "@shopify/polaris-icons";
 import { RequestFeature } from "./RequestFeature";
 import { SyncWarning } from "./SyncWarning";
@@ -15,6 +16,7 @@ import { ProductTable } from "./ProductTable";
 import { BundlesOverview } from "./BundlesOverview";
 
 export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher}) => {
+  const navigation = useNavigation();
   const [showRequestFeature, setShowRequestFeature] = useState(true);
   const [showSyncWarning, setShowSyncWarning] = useState(true);
 
@@ -46,6 +48,7 @@ export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher
 
   return (
     <Page fullWidth>
+      {navigation.state !== "idle" ? <div className="loader-spinner" style={{ position: 'fixed',height: '100%',width: '100',left: '0',top: '0',display: 'flex',flexDirection: 'column',justifyContent: 'center',alignItems: 'center' }}><Spinner accessibilityLabel="Spinner example" size="large" /></div> : <>
       <BlockStack gap="800">
         <Layout>
           <Layout.Section>

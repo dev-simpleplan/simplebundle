@@ -10,7 +10,9 @@ import {
   Icon,
   Box,
   Link,
+  Spinner
 } from '@shopify/polaris';
+import { useNavigation } from '@remix-run/react';
 import { ExternalIcon } from '@shopify/polaris-icons';
 import { SupportModal } from './SupportModal';
 
@@ -36,9 +38,11 @@ export default function ResourceUI({
     { text: 'FAQs', url: 'https://www.simpleplanmedia.com/faq/' },
     { text: 'Video Tutorials', url: 'https://www.youtube.com/@SimpleBundle' }
     ];
+  const navigation = useNavigation();
 
   return (
     <Page title="Resources">
+      {navigation.state !== "idle" ? <div className="loader-spinner" style={{ position: 'fixed',height: '100%',width: '100',left: '0',top: '0',display: 'flex',flexDirection: 'column',justifyContent: 'center',alignItems: 'center' }}><Spinner accessibilityLabel="Spinner example" size="large" /></div> : <>
       <BlockStack gap="800">
         <Layout>
           <Layout.Section variant="oneHalf">

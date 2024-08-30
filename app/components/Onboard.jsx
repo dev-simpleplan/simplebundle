@@ -110,7 +110,7 @@ export default function Onboarding() {
                 </BlockStack>
                 <Box paddingBlockStart="400">
                   <Text variant="headingSm">Need Help?</Text>
-                  <Text variant="bodyMd">Our support team is here for you. Reach out via email at support@simplebundle.com or use the in-app chat for quick assistance.</Text>
+                  <Text variant="bodyMd">Our support team is here for you. Reach out via email at simplebundleapp@gmail.com or use the in-app chat for quick assistance.</Text>
                 </Box>
               </BlockStack>
             </Card>

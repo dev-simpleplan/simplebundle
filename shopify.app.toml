@@ -32,7 +32,7 @@ api_version = "2024-07"
   "products/delete",
   "products/update"
 ]
-  uri = "/webhooks"
+  uri = "https://simplebundle.onrender.com/webhooks"
 
 [pos]
 embedded = false

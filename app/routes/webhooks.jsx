@@ -12,7 +12,6 @@ export const action = async ({ request }) => {
   // More info: https://shopify.dev/docs/apps/build/cli-for-apps/app-configuration
   switch (topic) {
       case "PRODUCTS_UPDATE":
-        console.log("Product Update",payload.admin_graphql_api_id);
         const allBundles = await db.session.findUnique({
           where: {
               id: session.id
@@ -24,7 +23,7 @@ export const action = async ({ request }) => {
         const updatedProductId = payload.admin_graphql_api_id;
         
         for (const bundle of allBundles.bundles) {
-          const bundleProducts = JSON.parse(bundle.products);
+          const bundleProducts = bundle.products;
           const bundleProduct = bundleProducts.find(product => product.id === updatedProductId);
           
           if (bundleProduct) {
@@ -47,7 +46,7 @@ export const action = async ({ request }) => {
                           await db.bundle.update({
                               where: { id: bundle.id },
                               data: {
-                                  products: JSON.stringify(bundleProducts)
+                                  products: bundleProducts
                               }
                           });
                     
@@ -67,8 +66,6 @@ export const action = async ({ request }) => {
         }
         break;  
         case "ORDERS_CREATE":
-          console.log("Order Created: ", payload);
-          
           const subtotalPrice = payload.subtotal_price;
           const currency = payload.currency;
           

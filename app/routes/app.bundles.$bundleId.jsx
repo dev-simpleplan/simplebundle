@@ -40,7 +40,6 @@ export async function loader({ params, request }) {
 
 const BundleUpdate = () => {
   const bundleData = useLoaderData();
-  
   const app = useAppBridge();
   const submit = useSubmit();
   const navigation = useNavigation();
@@ -53,6 +52,7 @@ const BundleUpdate = () => {
     idInDb: bundleData.bundleData.data.idInDb
   });
   const [errors, setErrors] = useState({});
+  
   const [bundleLimits, setBundleLimits] = useState({
     products: 0,
     options: 0,
@@ -77,6 +77,7 @@ const BundleUpdate = () => {
       const products = bundleData.bundleData.data.product.bundleComponents.edges.map(edge => ({
         id: edge.node.componentProduct.id,
         title: edge.node.componentProduct.title,
+        handle: edge.node.componentProduct.handle,
         vendor: edge.node.componentProduct.vendor || '',
         images: edge.node.componentProduct.featuredImage ? [edge.node.componentProduct.featuredImage] : [],
         quantity: edge.node.quantity,
@@ -141,12 +142,13 @@ const BundleUpdate = () => {
         discountType: formData.noDiscount ? null : formData.discountType,
         discountValue: formData.noDiscount ? null : formData.discountValue,
       };
-      
+
       submit({ formData: JSON.stringify(cleanedFormData) }, { method: 'post' });
     }
   }, [formData, validateForm, submit, bundleData]);
 
   const isUpdating = navigation.state === "submitting";
+  const isUpdateDisabled = errors.products || errors.limits;
 
   return (
 
@@ -184,11 +186,12 @@ const BundleUpdate = () => {
           <div style={{ display: 'flex', justifyContent: 'flex-start', gap:'14px' }}>
             <Button 
               variant="primary" 
-              onClick={handleUpdate} 
+                onClick={handleUpdate} 
+  disabled={isUpdateDisabled}
+              
             >
               Update Bundle
               </Button>
-              
               <Button 
               onClick={handleGoBack} 
             >

@@ -333,7 +333,7 @@
 
         // Check if the current product is the bundle product
         if ('{{ product.id }}' === bundleProductId) {
-  const products = JSON.parse(bundle.products);
+  const products = bundle.products;
   console.log("These are products", products);
   let bundleProductElement = `
      <h3>{{ block.settings.headingB }}</h3>
@@ -372,10 +372,10 @@
   });
 }  else {
           // Check if the current product is part of the bundle
-          const products = JSON.parse(bundle.products);
+          const products = bundle.products;
           products.forEach(product =>{
             if ('{{ product.id  }}' === product.id.replace('gid://shopify/Product/', '')) {
-                 const productsBundle = JSON.parse(bundle.products);
+                 const productsBundle = bundle.products;
               fetch(window.Shopify.routes.root + `products/${bundle.ProductHandle}.js`)
             .then(response => response.json())
             .then(prod => {

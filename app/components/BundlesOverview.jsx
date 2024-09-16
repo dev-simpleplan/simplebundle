@@ -13,12 +13,19 @@ import { InfoIcon } from "@shopify/polaris-icons";
 function InfoTooltip({ content }) {
   return (
     <Tooltip content={content}>
-        <Icon source={InfoIcon} color="subdued" />
+      <Icon source={InfoIcon} color="subdued" />
     </Tooltip>
   );
 }
 
-export function BundlesOverview({ totalBundles, activeBundles, draftBundles, revenue, orders, currency }) {
+export function BundlesOverview({
+  totalBundles,
+  fixedBundles,
+  infiniteBundles,
+  revenue,
+  orders,
+  currency,
+}) {
   return (
     <BlockStack gap="400">
       <Text variant="headingLg" as="h2">
@@ -38,10 +45,10 @@ export function BundlesOverview({ totalBundles, activeBundles, draftBundles, rev
                 {totalBundles}
               </Text>
               <Text variant="bodySm" as="p" color="subdued">
-                Total Active Bundles: {activeBundles}
+                Total Fixed Bundles: {fixedBundles}
               </Text>
               <Text variant="bodySm" as="p" color="subdued">
-                Total Draft Bundles: {draftBundles}
+                Total Infinite Bundles: {infiniteBundles}
               </Text>
             </BlockStack>
           </Box>
@@ -56,7 +63,7 @@ export function BundlesOverview({ totalBundles, activeBundles, draftBundles, rev
                 <InfoTooltip content="This represents the total number of bundles created in your store." />
               </InlineStack>
               <Text variant="heading2xl" as="p">
-              {revenue}  <span style={{fontSize:'0.6em'}}>{currency}</span>
+                {revenue} <span style={{ fontSize: "0.6em" }}>{currency}</span>
               </Text>
             </BlockStack>
           </Box>

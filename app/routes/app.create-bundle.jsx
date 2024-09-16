@@ -301,6 +301,13 @@ export default function CreateBundle() {
 
   return (
     <Page fullWidth>
+       {navigation.state === "loading" ? ( 
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <Spinner accessibilityLabel="Loading" size="large" />
+      </div>
+       ):
+     (
+      <>
       <BlockStack gap="800">
         <ProgressBar progress={(step / 4) * 100} size="small" tone="primary" />
         {errors.submit && (
@@ -377,6 +384,8 @@ export default function CreateBundle() {
         Redirect
       </a>
       <MultiStepLoader isLoading={isLoading} bundleCreated={bundleCreated} />
+      </>
+    )}
     </Page>
   );
 }

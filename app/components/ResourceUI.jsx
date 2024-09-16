@@ -58,7 +58,7 @@ export default function ResourceUI({
                               {index + 1}
                             </Text>
                           </div>
-                          <Link target='blank' url={step.url}>
+                          <Link target="_blank" url={step.url}>
                             {step.text}
                           </Link>
                         </InlineStack>
@@ -79,7 +79,7 @@ export default function ResourceUI({
                       <div style={{ flexShrink: 0 }}>
                         <Icon source={ExternalIcon} />
                       </div>
-                      <Link target='blank' url={link.url} external>
+                      <Link target="_blank" url={link.url} external>
                         {link.text}
                       </Link>
                     </InlineStack>

@@ -53,9 +53,9 @@ export default function TwoColumnLayout({ children, step, bundleLimits, formData
     }
 
     return productsWithOptions.map((product) => (
-      <BlockStack key={product.id} gap="200">
-        <Text variant="headingSm" as="h4">{product.title}</Text>
-        {product.options
+      <BlockStack key={product?.id} gap="200">
+        <Text variant="headingSm" as="h4">{product?.title}</Text>
+        {product?.options
           .filter(option => option.name !== 'Title' && option.values.length > 1)
           .map((option) => (
             <BlockStack key={option.id} gap="100">

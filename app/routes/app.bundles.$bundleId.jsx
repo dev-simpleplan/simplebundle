@@ -162,6 +162,13 @@ const BundleUpdate = () => {
         `}
       </style>
     <Page fullWidth>
+      {navigation.state === "loading" ? ( 
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <Spinner accessibilityLabel="Loading" size="large" />
+      </div>
+       ):
+     (
+      <>
       <TwoColumnLayout step={2} bundleLimits={bundleLimits} formData={formData}>
         <BlockStack gap="500">
           <ProductSelectionStep
@@ -215,6 +222,8 @@ const BundleUpdate = () => {
           </div>
         </Modal.Section>
       </Modal>
+        </>
+     )}
       </Page>
       <div style={{ height: '60px' }} aria-hidden="true" /> {/* Spacer */}
     </>

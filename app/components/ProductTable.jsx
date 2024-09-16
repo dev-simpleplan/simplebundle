@@ -11,7 +11,6 @@ import {
   Tooltip,
   IndexFilters,
   useSetIndexFiltersMode,
-  TextField,
   RangeSlider,
   ChoiceList,
 } from "@shopify/polaris";
@@ -23,306 +22,205 @@ import {
 } from "@shopify/polaris-icons";
 import { useProductFilters } from "../hooks/useProductFilters";
 import { useProductSorting } from "../hooks/useProductSorting";
-import { StatusChangeButton } from "./StateChangeButton";
 
-export function ProductTable({ products, onStatusChange, onDeleteProduct, fetcher }) {
-  const [itemStrings, setItemStrings] = useState([
-    "All",
-    "Active",
-    "Draft",
-    "Archived",
-  ]);
+export function ProductTable({ products, onDeleteProduct, fetcher, navigate }) {
   const [selected, setSelected] = useState(0);
-  const [customViews, setCustomViews] = useState([]);
   const { mode, setMode } = useSetIndexFiltersMode();
 
-  const {
-    status,
-    priceRange,
-    inventoryRange,
-    vendor,
-    queryValue,
-    handleStatusChange,
-    handlePriceRangeChange,
-    handleInventoryRangeChange,
-    handleVendorChange,
-    handleFiltersQueryChange,
-    handleStatusRemove,
-    handlePriceRangeRemove,
-    handleInventoryRangeRemove,
-    handleVendorRemove,
-    handleFiltersClearAll,
-    filteredProducts,
-  } = useProductFilters(products);
+  // const {
+  //   priceRange,
+  //   bundleType,
+  //   queryValue,
+  //   handlePriceRangeChange,
+  //   handleBundleTypeChange,
+  //   handleFiltersQueryChange,
+  //   handlePriceRangeRemove,
+  //   handleBundleTypeRemove,
+  //   handleFiltersClearAll,
+  //   filteredProducts,
+  // } = useProductFilters(products);
 
-  const { sortSelected, handleSortChange, sortedProducts } =
-    useProductSorting(filteredProducts);
+  // const { sortSelected, handleSortChange, sortedProducts } =
+  //   useProductSorting(filteredProducts);
 
-  const tabs = useMemo(() => [
-    ...itemStrings.map((item, index) => ({
-      content: item,
-      index,
-      id: `default-${index}`,
-      count: item === "All" ? products.length : products.filter(p => p.node.status === item.toUpperCase()).length,
-    })),
-    ...customViews.map((view, index) => ({
-      content: view.name,
-      index: itemStrings.length + index,
-      id: `custom-${view.name}`,
-    })),
-  ], [itemStrings, customViews, products]);
+  // const tabs = useMemo(
+  //   () => [
+  //     {
+  //       content: "All",
+  //       index: 0,
+  //       id: "all-products",
+  //       count: products.length,
+  //     },
+  //   ],
+  //   [products]
+  // );
 
-  const handleSelectCustomView = useCallback(
-    (index) => {
-      const view = customViews[index];
-      handleStatusChange(view.filters.status);
-      handlePriceRangeChange(view.filters.priceRange);
-      handleInventoryRangeChange(view.filters.inventoryRange);
-      handleVendorChange(view.filters.vendor);
-      handleFiltersQueryChange(view.filters.queryValue);
-    },
-    [
-      customViews,
-      handleStatusChange,
-      handlePriceRangeChange,
-      handleInventoryRangeChange,
-      handleVendorChange,
-      handleFiltersQueryChange,
-    ]
-  );
+  // const handleTabChange = useCallback((selectedTabIndex) => {
+  //   setSelected(selectedTabIndex);
+  // }, []);
 
-  const handleTabChange = useCallback(
-    (selectedTabIndex) => {
-      setSelected(selectedTabIndex);
-      if (selectedTabIndex === 0) {
-        handleStatusRemove();
-      } else if (selectedTabIndex < itemStrings.length) {
-        handleStatusChange([itemStrings[selectedTabIndex].toUpperCase()]);
-      } else {
-        const customViewIndex = selectedTabIndex - itemStrings.length;
-        handleSelectCustomView(customViewIndex);
-      }
-    },
-    [itemStrings, handleStatusRemove, handleStatusChange, handleSelectCustomView]
-  );
+  // const filters = [
+  //   {
+  //     key: "bundleType",
+  //     label: "Bundle Type",
+  //     filter: (
+  //       <ChoiceList
+  //         title="Bundle Type"
+  //         titleHidden
+  //         choices={[
+  //           { label: "Fixed", value: "fixed" },
+  //           { label: "Variable", value: "variable" },
+  //         ]}
+  //         selected={bundleType || []}
+  //         onChange={handleBundleTypeChange}
+  //         allowMultiple
+  //       />
+  //     ),
+  //     shortcut: true,
+  //   },
+  //   {
+  //     key: "priceRange",
+  //     label: "Price range",
+  //     filter: (
+  //       <RangeSlider
+  //         label="Price range"
+  //         labelHidden
+  //         value={priceRange || [0, 2000]}
+  //         prefix="$"
+  //         output
+  //         min={0}
+  //         max={2000}
+  //         step={1}
+  //         onChange={handlePriceRangeChange}
+  //       />
+  //     ),
+  //   },
+  // ];
 
-  const handleCreateNewView = useCallback(
-    (value) => {
-      const newView = {
-        name: value,
-        filters: { status, priceRange, inventoryRange, vendor, queryValue },
-      };
-      setCustomViews((prev) => [...prev, newView]);
-      setItemStrings((prev) => [...prev, value]);
-      setSelected(itemStrings.length + customViews.length);
-    },
-    [status, priceRange, inventoryRange, vendor, queryValue, itemStrings.length, customViews.length]
-  );
-
-  const filters = [
-    {
-      key: "status",
-      label: "Status",
-      filter: (
-        <ChoiceList
-          title="Status"
-          titleHidden
-          choices={[
-            { label: "Active", value: "ACTIVE" },
-            { label: "Draft", value: "DRAFT" },
-            { label: "Archived", value: "ARCHIVED" },
-          ]}
-          selected={status || []}
-          onChange={handleStatusChange}
-          allowMultiple
-        />
-      ),
-      shortcut: true,
-    },
-    {
-      key: "priceRange",
-      label: "Price range",
-      filter: (
-        <RangeSlider
-          label="Price range"
-          labelHidden
-          value={priceRange || [0, 1000]}
-          prefix="$"
-          output
-          min={0}
-          max={1000}
-          step={1}
-          onChange={handlePriceRangeChange}
-        />
-      ),
-    },
-    {
-      key: "inventoryRange",
-      label: "Inventory range",
-      filter: (
-        <RangeSlider
-          label="Inventory range"
-          labelHidden
-          value={inventoryRange || [0, 100]}
-          output
-          min={0}
-          max={100}
-          step={1}
-          onChange={handleInventoryRangeChange}
-        />
-      ),
-    },
-    {
-      key: "vendor",
-      label: "Vendor",
-      filter: (
-        <TextField
-          label="Vendor"
-          value={vendor}
-          onChange={handleVendorChange}
-          autoComplete="off"
-          labelHidden
-        />
-      ),
-      shortcut: true,
-    },
-  ];
-
-  const appliedFilters = [
-    ...(status?.length > 0
-      ? [
-          {
-            key: "status",
-            label: `Status: ${status.join(", ")}`,
-            onRemove: handleStatusRemove,
-          },
-        ]
-      : []),
-    ...(priceRange
-      ? [
-          {
-            key: "priceRange",
-            label: `Price: $${priceRange[0]} - $${priceRange[1]}`,
-            onRemove: handlePriceRangeRemove,
-          },
-        ]
-      : []),
-    ...(inventoryRange
-      ? [
-          {
-            key: "inventoryRange",
-            label: `Inventory: ${inventoryRange[0]} - ${inventoryRange[1]}`,
-            onRemove: handleInventoryRangeRemove,
-          },
-        ]
-      : []),
-    ...(vendor
-      ? [
-          {
-            key: "vendor",
-            label: `Vendor: ${vendor}`,
-            onRemove: handleVendorRemove,
-          },
-        ]
-      : []),
-  ];
+  // const appliedFilters = [
+  //   ...(bundleType?.length > 0
+  //     ? [
+  //         {
+  //           key: "bundleType",
+  //           label: `Bundle Type: ${bundleType.join(", ")}`,
+  //           onRemove: handleBundleTypeRemove,
+  //         },
+  //       ]
+  //     : []),
+  //   ...(priceRange
+  //     ? [
+  //         {
+  //           key: "priceRange",
+  //           label: `Price: $${priceRange[0]} - $${priceRange[1]}`,
+  //           onRemove: handlePriceRangeRemove,
+  //         },
+  //       ]
+  //     : []),
+  // ];
 
   const resourceName = {
-    singular: "product",
-    plural: "products",
+    singular: "bundle",
+    plural: "bundles",
   };
 
-  const rowMarkup = sortedProducts.map(({ node: product }, index) => (
-    <IndexTable.Row
-      id={product.id}
-      key={product.id}
-      position={index}
-    >
-      <IndexTable.Cell>
-        <InlineStack blockAlign="center" align="start" gap="400">
-          <Thumbnail
-            source={product.featuredImage?.url || ImageIcon}
-            alt={product.title}
-            size="small"
-          />
-          <Text variant="bodyMd" fontWeight="bold" as="span">
-            {product.title}
+  const rowMarkup = products.map((product, index) => {
+    const firstProduct = product.products?.[0] || {};
+    const firstVariant = firstProduct.variants?.[0] || {};
+    const firstImage = firstProduct.images?.[0];
+
+    return (
+      <IndexTable.Row
+        id={product.id.toString()}
+        key={product.id}
+        position={index}
+      >
+        <IndexTable.Cell>
+          <InlineStack blockAlign="center" align="start" gap="400">
+            <Thumbnail
+              source={firstImage?.originalSrc || ImageIcon}
+              alt={firstProduct?.title || "Product image"}
+              size="small"
+            />
+            <Text variant="bodyMd" fontWeight="bold" as="span">
+              {product?.bundleName || "Untitled Bundle"}
+            </Text>
+          </InlineStack>
+        </IndexTable.Cell>
+        <IndexTable.Cell>
+          <Text variant="bodyMd" as="span">
+            ${parseFloat(product.variants?.[0]?.price || 0).toFixed(2)}
           </Text>
-        </InlineStack>
-      </IndexTable.Cell>
-      <IndexTable.Cell>
-        <Text variant="bodyMd" as="span">
-          {product.priceRangeV2.minVariantPrice.currencyCode}{" "}
-          {parseFloat(product.priceRangeV2.minVariantPrice.amount).toFixed(2)}
-        </Text>
-      </IndexTable.Cell>
-      <IndexTable.Cell>
-        <Text variant="bodyMd" as="span">
-          {product.totalInventory}
-        </Text>
-      </IndexTable.Cell>
-      <IndexTable.Cell>
-        <Badge tone={product.status === "ACTIVE" ? "success" : "info"}>
-          {product.status}
-        </Badge>
-      </IndexTable.Cell>
-      <IndexTable.Cell>
-        <Text variant="bodyMd" as="span">
-          {product.vendor}
-        </Text>
-      </IndexTable.Cell>
-      <IndexTable.Cell>
-        <ButtonGroup segmented>
-          <Tooltip content="Edit product" dismissOnMouseOut>
-            <Button
-              size="slim"
-              icon={EditIcon}
-              onClick={() =>
-                window.open(
-                  `shopify://admin/products/${product.id.split("/").pop()}`,
-                  "_self",
-                )
-              }
-               loading={fetcher.state === "submitting"}
-            />
-          </Tooltip>
-          <Tooltip content="Preview product" dismissOnMouseOut>
-            <Button
-              size="slim"
-              icon={ViewIcon}
-              onClick={() =>
-                window.open(
-                  product.onlineStorePreviewUrl,
-                  "_blank",
-                )
-              }
-               loading={fetcher.state === "submitting"}
-            />
-          </Tooltip>
-          <StatusChangeButton
-            status={product.status}
-            onStatusChange={(newStatus) => onStatusChange(product.id, newStatus)}
-              loading={fetcher.state === "submitting"}
-          />
-          <Tooltip content="Delete product" dismissOnMouseOut>
-            <Button
-              size="slim"
-              icon={DeleteIcon}
-              onClick={() => onDeleteProduct(product.id)}
-               loading={fetcher.state === "submitting"}
-            />
-          </Tooltip>
-        </ButtonGroup>
-      </IndexTable.Cell>
-    </IndexTable.Row>
-  ));
+        </IndexTable.Cell>
+        <IndexTable.Cell>
+          <Text variant="bodyMd" as="span">
+            {firstVariant.inventoryQuantity || 0}
+          </Text>
+        </IndexTable.Cell>
+        {/* <IndexTable.Cell>
+          <Badge tone={firstVariant.availableForSale ? "success" : "critical"}>
+            {firstVariant.availableForSale ? "Active" : "Inactive"}
+          </Badge>
+        </IndexTable.Cell> */}
+        <IndexTable.Cell>
+          <Text variant="bodyMd" as="span">
+            {firstProduct.vendor || "Unknown Vendor"}
+          </Text>
+        </IndexTable.Cell>
+        <IndexTable.Cell>
+          <Text variant="bodyMd" as="span" textTransform="capitalize">
+            {product.bundleType || "Unknown"}
+          </Text>
+        </IndexTable.Cell>
+        <IndexTable.Cell>
+          <ButtonGroup segmented>
+            <Tooltip content="Edit bundle" dismissOnMouseOut>
+              <Button
+                size="slim"
+                icon={EditIcon}
+                onClick={() => {
+                  if (product.bundleType === 'infinite') {
+                    // For infinite bundles, use product.id
+                    navigate(`/app/infinite/${product.id}`, "_self");
+                  } else {
+                    // For fixed bundles, use ProductBundleId
+                    const bundleId = product.ProductBundleId?.split("/").pop();
+                    if (bundleId) {
+                      navigate(`/app/bundles/${bundleId}`, "_self");
+                    }
+                  }
+                }}
+              />
+            </Tooltip>
+            {/* <Tooltip content="Preview bundle" dismissOnMouseOut>
+              <Button
+                size="slim"
+                icon={ViewIcon}
+                onClick={() =>
+                  window.open(product.onlineStorePreviewUrl, "_blank")
+                }
+                loading={fetcher.state === "submitting"}
+              />
+            </Tooltip> */}
+            <Tooltip content="Delete bundle" dismissOnMouseOut>
+              <Button
+                size="slim"
+                icon={DeleteIcon}
+                onClick={() => onDeleteProduct(product.ProductBundleId, product.id)}
+                loading={fetcher.state === "submitting"}
+              />
+            </Tooltip>
+          </ButtonGroup>
+        </IndexTable.Cell>
+      </IndexTable.Row>
+    );
+  });
 
   return (
     <Card>
-      <IndexFilters
+      {/* <IndexFilters
         sortOptions={[
-          { label: "Product", value: "product asc", directionLabel: "A-Z" },
-          { label: "Product", value: "product desc", directionLabel: "Z-A" },
+          { label: "Bundle", value: "bundleName asc", directionLabel: "A-Z" },
+          { label: "Bundle", value: "bundleName desc", directionLabel: "Z-A" },
           {
             label: "Price",
             value: "price asc",
@@ -334,32 +232,28 @@ export function ProductTable({ products, onStatusChange, onDeleteProduct, fetche
             directionLabel: "Highest to lowest",
           },
           {
-            label: "Inventory",
-            value: "inventory asc",
-            directionLabel: "Lowest to highest",
+            label: "Bundle Type",
+            value: "bundleType asc",
+            directionLabel: "A-Z",
           },
           {
-            label: "Inventory",
-            value: "inventory desc",
-            directionLabel: "Highest to lowest",
+            label: "Bundle Type",
+            value: "bundleType desc",
+            directionLabel: "Z-A",
           },
         ]}
         sortSelected={sortSelected}
         queryValue={queryValue}
-        queryPlaceholder="Search products"
+        queryPlaceholder="Search bundles"
         onQueryChange={handleFiltersQueryChange}
         onQueryClear={() => handleFiltersQueryChange("")}
         onSort={handleSortChange}
-        primaryAction={{ content: "Add product", onAction: () => {} }}
         cancelAction={{
           onAction: handleFiltersClearAll,
           disabled: false,
           loading: false,
         }}
-        tabs={tabs.map(tab => ({
-          ...tab,
-          key: tab.id,
-        }))}
+        tabs={tabs}
         selected={selected}
         onSelect={handleTabChange}
         filters={filters}
@@ -367,18 +261,17 @@ export function ProductTable({ products, onStatusChange, onDeleteProduct, fetche
         onClearAll={handleFiltersClearAll}
         mode={mode}
         setMode={setMode}
-        canCreateNewView
-        onCreateNewView={handleCreateNewView}
-      />
+      /> */}
       <IndexTable
         resourceName={resourceName}
-        itemCount={sortedProducts.length}
+        itemCount={products.length}
         headings={[
-          { title: "Product" },
+          { title: "Bundle" },
           { title: "Price" },
           { title: "Inventory" },
-          { title: "Status" },
+          // { title: "Status" },
           { title: "Vendor" },
+          { title: "Bundle Type" },
           { title: "Actions" },
         ]}
         selectable={false}

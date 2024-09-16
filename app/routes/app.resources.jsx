@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { json } from "@remix-run/node";
-import { useActionData, useSubmit } from "@remix-run/react";
+import { useActionData, useSubmit, useNavigation } from "@remix-run/react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import ResourceUI from "../components/ResourceUI";
+import { Spinner } from "@shopify/polaris";
 import { submitToGoogleSheets } from "../server/google-spreadsheet.server";
 import { authenticate } from "../shopify.server";
 
@@ -32,6 +33,7 @@ export default function Resources() {
   const app = useAppBridge();
   const actionData = useActionData();
   const submit = useSubmit();
+  const navigation = useNavigation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [shouldResetForm, setShouldResetForm] = useState(false);
@@ -66,6 +68,13 @@ export default function Resources() {
   };
 
   return (
+    <>
+    {navigation.state === "loading" ? ( 
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+      <Spinner accessibilityLabel="Loading" size="large" />
+    </div>
+     ):
+   (
     <ResourceUI 
       onSupportSubmit={handleSupportSubmit} 
       formErrors={actionData?.errors}
@@ -75,5 +84,7 @@ export default function Resources() {
       onModalClose={handleModalClose}
       shouldResetForm={shouldResetForm}
     />
+    )}
+    </>
   );
 }

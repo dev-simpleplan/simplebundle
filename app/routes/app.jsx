@@ -22,7 +22,8 @@ export default function App() {
           <Link to="/app" rel="home">
             Home
           </Link>
-        <Link to="/app/create-bundle">Create Bundle</Link>
+        <Link to="/app/create-bundle">Create Fixed Bundle</Link>
+        <Link to="/app/create-bundle2">Create Infinite Bundle</Link>
         <Link to="/app/analytics">Analytics</Link>
         <Link to="/app/resources">Resources</Link>
         </NavMenu>

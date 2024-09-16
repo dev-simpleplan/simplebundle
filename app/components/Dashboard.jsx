@@ -14,13 +14,18 @@ import { SyncWarning } from "./SyncWarning";
 import { ProductTable } from "./ProductTable";
 import { BundlesOverview } from "./BundlesOverview";
 
-export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher}) => {
+export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher, navigate}) => {
   const [showRequestFeature, setShowRequestFeature] = useState(true);
   const [showSyncWarning, setShowSyncWarning] = useState(true);
 
-  const activeBundles = useMemo(() => products?.filter(({ node }) => node.status === 'ACTIVE').length ?? 0, [products]);
-  const draftBundles = useMemo(() => products?.filter(({ node }) => node.status === 'DRAFT').length ?? 0, [products]);
+  // const activeBundles = useMemo(() => products?.filter(({ node }) => node.status === 'ACTIVE').length ?? 0, [products]);
+  // const draftBundles = useMemo(() => products?.filter(({ node }) => node.status === 'DRAFT').length ?? 0, [products]);
 
+
+  const fixedBundles = products.filter((product) => product.bundleType === 'fixed');
+
+  const infiniteBundles = products.filter((product) => product.bundleType === 'infinite');
+  
   if (!products || products.length === 0) {
     return (
       <Page narrowWidth >
@@ -65,8 +70,8 @@ export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher
           <Layout.Section>
             <BundlesOverview 
               totalBundles={products.length}
-              activeBundles={activeBundles}
-              draftBundles={draftBundles}
+              fixedBundles={fixedBundles.length}
+              infiniteBundles={infiniteBundles.length}
             />
           </Layout.Section>
           <Layout.Section>
@@ -75,6 +80,7 @@ export const DashboardUI = ({ products, onStatusChange, onDeleteProduct, fetcher
               onStatusChange={onStatusChange} 
               onDeleteProduct={onDeleteProduct}
               fetcher={fetcher}
+              navigate={navigate}
             />
           </Layout.Section>
         </Layout>

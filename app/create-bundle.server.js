@@ -62,6 +62,7 @@ async function createBundleInDatabase(bundleData, userId, productId, productHand
     discountType: bundleData.noDiscount ? null : bundleData.discountType,
     discountValue: bundleData.noDiscount ? null : bundleData.discountValue,
     products: bundleData.products,
+    bundleType:"fixed",
     userId: userId,
   };
   

@@ -18,13 +18,12 @@ export const FETCH_BUNDLE_QUERY = `
   
   fragment ProductFragment on Product {
     id
-    handle
     title
     featuredImage {
       id
-      url
-      originalSrc
+      url: url(transform: {maxWidth: 80, maxHeight: 80})
       altText
+      __typename
     }
     options(first: 3) {
       id

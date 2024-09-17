@@ -23,6 +23,7 @@ import {
   import prisma from "../db.server";
   import TwoColumnLayoutTwo from '../components/TwoColumnTwo';
   import {BundleWarningTwo} from "../components/BundleWarningTwo";
+  import { FETCH_PUBLICATIONS } from "../api/FETCH_PUBLICATIONS";
 
   export async function action({request}) {
     const body = await request.formData();

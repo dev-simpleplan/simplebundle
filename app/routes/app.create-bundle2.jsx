@@ -16,6 +16,7 @@ import {
   } from "@remix-run/react";
   import { authenticate } from "../shopify.server";
   import { CREATE_PRODUCT_STATUS } from "../api/CREATE_PRODUCT_STATUS";
+  import { PUBLISH_PRODUCT } from "../api/PUBLISH_PRODUCT";
   import InfiniteStep1 from "../components/InfiniteStep1";
   import InfiniteStep2 from "../components/InfiniteStep2";
   import { useAppBridge } from "@shopify/app-bridge-react";
@@ -40,6 +41,17 @@ import {
       );
       const result = await response.json();
       const data = result.data;
+    const response3 = await admin.graphql(FETCH_PUBLICATIONS);
+      const data2 = await response3.json();
+      const id = data2.data.publications.edges.filter(edge => edge.node.name === "Online Store").map(edge => edge.node.id);
+       await admin.graphql(PUBLISH_PRODUCT,{
+          variables:{
+            "id":  data.productCreate.product.id,
+            "input": {
+              "publicationId": id[0]
+            }
+          }
+      })
       const offerData = {
         ProductBundleId: data.productCreate.product.id,
         ProductHandle: null,

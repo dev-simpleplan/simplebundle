@@ -23,7 +23,7 @@
     "node": "^18.20 || ^20.10 || >=21.0.0"
   },
   "dependencies": {
-    "@prisma/client": "^5.17.0",
+    "@prisma/client": "^5.19.1",
     "@remix-run/dev": "^2.7.1",
     "@remix-run/node": "^2.7.1",
     "@remix-run/react": "^2.7.1",
@@ -31,6 +31,7 @@
     "@shopify/app-bridge-react": "^4.1.2",
     "@shopify/shopify-app-remix": "^3.0.2",
     "@shopify/shopify-app-session-storage-prisma": "^5.0.2",
+    "@slack/bolt": "^3.21.4",
     "axios": "^1.7.4",
     "chart.js": "^4.4.3",
     "form-data": "^4.0.0",
@@ -38,7 +39,6 @@
     "highcharts": "^11.4.7",
     "isbot": "^5.1.0",
     "node-fetch": "^2.7.0",
-    "prisma": "^5.11.0",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
@@ -55,6 +55,7 @@
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.2.4",
+    "prisma": "^5.19.1",
     "typescript": "^5.2.2",
     "vite": "^5.1.3"
   },

@@ -27,6 +27,43 @@ query {
       maxProductVariants
     }
     currencyCode
+    plan{
+     displayName
+      partnerDevelopment
+      shopifyPlus
+    }
+    createdAt
+    billingAddress{
+    address1
+    address2
+    city
+    company
+    country
+    }
+    contactEmail
+    email
+    description
+    features{
+    bundles{
+      ineligibilityReason
+    }
+    cartTransform{
+    eligibleOperations{
+    expandOperation
+    mergeOperation
+    updateOperation
+    }
+    }
+    storefront
+    }
+    ianaTimezone
+    primaryDomain {
+      host
+      id
+      url
+    }
+    updatedAt
+
   }
 }
 `;

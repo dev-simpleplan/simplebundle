@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo } from "react";
-import { useLoaderData, useFetcher, useNavigate, useNavigation } from "@remix-run/react";
+import {
+  useLoaderData,
+  useFetcher,
+  useNavigate,
+  useNavigation,
+} from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
 import { useAppBridge } from "@shopify/app-bridge-react";
 // import { fetchBundle } from "../fetch-bundle.server";
@@ -13,6 +18,13 @@ import { handleGraphQLResponse } from "../utils/sharedUtils";
 import { submitToGoogleSheets } from "../server/google-spreadsheet.server";
 import { Spinner } from "@shopify/polaris";
 import { REGISTER } from "../api/REGISTER";
+import { fetchShopInfo } from "../fetchShopInfo.server";
+import {
+  checkFirstInstall,
+  createShopInstallation,
+  createShopifyStore,
+} from "../shopInstallation";
+import { sendSlackNotification } from "../sendSlackNotification";
 
 export async function loader({ request }) {
   const { session, admin } = await authenticate.admin(request);
@@ -20,6 +32,30 @@ export async function loader({ request }) {
   const sessionData = await prisma.session.findUnique({
     where: { id: session.id },
   });
+
+  const shopData = await fetchShopInfo(request);
+
+  const isFirstInstall = await checkFirstInstall(shopData.data.shop.url);
+
+  if (isFirstInstall) {
+    // Fetch shop data
+    if (!shopData || !shopData.data) {
+      return json(
+        { error: "Failed to fetch shop data. Please try again later" },
+        { status: 500 },
+      );
+    }
+
+    // Create new installation record
+    const installation = await createShopInstallation(shopData.data.shop.url);
+
+    // Create new store record
+    const storeData = await createShopifyStore(shopData, installation.id);
+
+    // Send Slack notification
+    await sendSlackNotification(storeData);
+  }
+
   const response = await admin.graphql(REGISTER);
   const jsonResponse = await response.json(); // Await the JSON response
   console.log(jsonResponse); // Log the actual JSON response
@@ -81,7 +117,7 @@ export async function action({ request }) {
       if (!email || !message || !requestType) {
         return json(
           { success: false, error: "Missing required fields" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -104,7 +140,7 @@ export async function action({ request }) {
     } catch (error) {
       return json(
         { success: false, error: "Failed to submit support request" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   }
@@ -119,7 +155,7 @@ export async function action({ request }) {
     } catch (error) {
       return json(
         { success: false, error: "Failed to update onboarding status" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   }
@@ -134,7 +170,7 @@ export async function action({ request }) {
     } catch (error) {
       return json(
         { success: false, error: "Failed to update product status" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   }
@@ -149,7 +185,7 @@ export async function action({ request }) {
     } catch (error) {
       return json(
         { success: false, error: "Failed to delete product" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   }
@@ -171,14 +207,14 @@ export default function Dashboard() {
   const handleStatusChange = (productId, newStatus) => {
     fetcher.submit(
       { action: "updateProductStatus", productId, newStatus },
-      { method: "post" }
+      { method: "post" },
     );
   };
 
   const handleDeleteProduct = (productId, productIdInDB) => {
     fetcher.submit(
       { action: "deleteProduct", productId, productIdInDB },
-      { method: "post" }
+      { method: "post" },
     );
   };
 
@@ -191,11 +227,17 @@ export default function Dashboard() {
       }
     }
   }, [fetcher.data, app]);
-  
 
   if (navigation.state === "loading") {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
         <Spinner accessibilityLabel="Loading" size="large" />
       </div>
     );

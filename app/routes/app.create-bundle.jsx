@@ -97,6 +97,7 @@ export default function CreateBundle() {
   const [productImages, setProductImages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [bundleCreated, setBundleCreated] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState(null);
   const [bundleLimits, setBundleLimits] = useState({
     products: 0,
     options: 0,
@@ -107,21 +108,24 @@ export default function CreateBundle() {
   const submit = useSubmit();
   const navigation = useNavigation();
   const actionData = useActionData();
-  const redirectAnchorRef = useRef(null);
+  const redirectAnchorRef = useCallback(
+    (node) => {
+      if (node !== null && redirectUrl) {
+        node.href = redirectUrl;
+        node.click();
+      }
+    },
+    [redirectUrl],
+  );
 
   useEffect(() => {
-    if (actionData) {
-      if (actionData.success) {
-        setBundleCreated(true);
-        setIsLoading(true);
-        if (redirectAnchorRef.current) {
-          redirectAnchorRef.current.href = `shopify://admin/products/${actionData.productId}`;
-          redirectAnchorRef.current.click();
-        }
-      } else {
-        setErrors({ submit: actionData.error });
-        setIsLoading(false);
-      }
+    if (actionData?.success && actionData.productId) {
+      setRedirectUrl(`shopify://admin/products/${actionData.productId}`);
+      setBundleCreated(true);
+      setIsLoading(true);
+    } else if (actionData && !actionData.success) {
+      setErrors({ submit: actionData.error });
+      setIsLoading(false);
     }
   }, [actionData]);
 
@@ -161,7 +165,7 @@ export default function CreateBundle() {
     }
     setErrors((prevErrors) => ({ ...prevErrors, ...newErrors }));
     return Object.keys(newErrors).length === 0;
-  }, [formData, step,errors.products, errors.limits]);
+  }, [formData, step, errors.products, errors.limits]);
 
   const handleNextStep = useCallback(() => {
     if (validateStep()) {
@@ -301,91 +305,107 @@ export default function CreateBundle() {
 
   return (
     <Page fullWidth>
-       {navigation.state === "loading" ? ( 
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <Spinner accessibilityLabel="Loading" size="large" />
-      </div>
-       ):
-     (
-      <>
-      <BlockStack gap="800">
-        <ProgressBar progress={(step / 4) * 100} size="small" tone="primary" />
-        {errors.submit && (
-          <Banner
-            title="There was an error creating the bundle"
-            tone="critical"
-          >
-            <p>{errors.submit}</p>
-          </Banner>
-        )}
+      {navigation.state === "loading" ? (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          <Spinner accessibilityLabel="Loading" size="large" />
+        </div>
+      ) : (
+        <>
+          <BlockStack gap="800">
+            <ProgressBar
+              progress={(step / 4) * 100}
+              size="small"
+              tone="primary"
+            />
+            {errors.submit && (
+              <Banner
+                title="There was an error creating the bundle"
+                tone="critical"
+              >
+                <p>{errors.submit}</p>
+              </Banner>
+            )}
 
-        <BundleWarning
-          showBanner={showBundleWarning}
-          setShowBanner={setShowBundleWarning}
-        />
+            <BundleWarning
+              showBanner={showBundleWarning}
+              setShowBanner={setShowBundleWarning}
+            />
 
-        <Form method="post">
-          <TwoColumnLayout
-            step={step}
-            bundleLimits={bundleLimits}
-            formData={formData}
-          >
-            <BlockStack gap="600">
-              {renderStep()}
-              <Card>
-                <InlineStack align="space-between">
-                  <div>
-                    {step > 1 && (
-                      <Button onClick={handlePreviousStep}>
-                        <InlineStack gap="200">
-                          <Icon source={ChevronLeftIcon} />
-                          <Text>Previous</Text>
-                        </InlineStack>
-                      </Button>
-                    )}
-                  </div>
-                  <div>
-                    {step < 4 ? (
-                      <Button onClick={handleNextStep} primary
-                        disabled={step === 2 && (errors.products || errors.limits)}
-                      >
-                        <InlineStack gap="200">
-                          <Text>Next</Text>
-                          <Icon source={ChevronRightIcon} />
-                          
-                        </InlineStack>
-                      </Button>
-                    ) : (
-                      <InlineStack gap="200">
-                        <Button
-                          onClick={() => handleSubmit("draft")}
-                          variant="primary"
-                          loading={navigation.state === "submitting"}
-                        >
-                          Save as Draft
-                        </Button>
-                        <Button
-                          onClick={() => handleSubmit("active")}
-                          variant="primary"
-                          loading={navigation.state === "submitting"}
-                        >
-                          Publish Bundle
-                        </Button>
-                      </InlineStack>
-                    )}
-                  </div>
-                </InlineStack>
-              </Card>
-            </BlockStack>
-          </TwoColumnLayout>
-        </Form>
-      </BlockStack>
-      <a ref={redirectAnchorRef} style={{ display: "none" }} target="_top">
-        Redirect
-      </a>
-      <MultiStepLoader isLoading={isLoading} bundleCreated={bundleCreated} />
-      </>
-    )}
+            <Form method="post">
+              <TwoColumnLayout
+                step={step}
+                bundleLimits={bundleLimits}
+                formData={formData}
+              >
+                <BlockStack gap="600">
+                  {renderStep()}
+                  <Card>
+                    <InlineStack align="space-between">
+                      <div>
+                        {step > 1 && (
+                          <Button onClick={handlePreviousStep}>
+                            <InlineStack gap="200">
+                              <Icon source={ChevronLeftIcon} />
+                              <Text>Previous</Text>
+                            </InlineStack>
+                          </Button>
+                        )}
+                      </div>
+                      <div>
+                        {step < 4 ? (
+                          <Button
+                            onClick={handleNextStep}
+                            primary
+                            disabled={
+                              step === 2 && (errors.products || errors.limits)
+                            }
+                          >
+                            <InlineStack gap="200">
+                              <Text>Next</Text>
+                              <Icon source={ChevronRightIcon} />
+                            </InlineStack>
+                          </Button>
+                        ) : (
+                          <InlineStack gap="200">
+                            <Button
+                              onClick={() => handleSubmit("draft")}
+                              variant="primary"
+                              loading={navigation.state === "submitting"}
+                            >
+                              Save as Draft
+                            </Button>
+                            <Button
+                              onClick={() => handleSubmit("active")}
+                              variant="primary"
+                              loading={navigation.state === "submitting"}
+                            >
+                              Publish Bundle
+                            </Button>
+                          </InlineStack>
+                        )}
+                      </div>
+                    </InlineStack>
+                  </Card>
+                </BlockStack>
+              </TwoColumnLayout>
+            </Form>
+          </BlockStack>
+          <a ref={redirectAnchorRef} style={{ display: "none" }} target="_top">
+            Redirect
+          </a>
+          <MultiStepLoader
+            isLoading={isLoading}
+            bundleCreated={bundleCreated}
+          />
+        </>
+      )}
     </Page>
   );
 }

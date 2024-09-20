@@ -9,7 +9,7 @@ export async function fetchBundle(request) {
   try {
     const bundleProductIdResponse = await admin.graphql(GET_BUNDLE_PRODUCT_ID, {
       variables: {
-        "handleOrKey": "test-sb-2"
+        "handleOrKey": "simplebundle-vipul"
       }
     });
 

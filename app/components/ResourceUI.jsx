@@ -26,6 +26,7 @@ export default function ResourceUI({
 }) {
    const quickStartSteps = [
     { text: 'Create Your First Bundle', url: 'https://www.youtube.com/watch?v=ot0m0MN8eI8' },
+    { text: 'Create Infinite Options Bundle', url: 'https://www.youtube.com/watch?v=KXYQKAMJ71s' }, 
     { text: 'Set Pricing Strategy', url: 'https://www.youtube.com/watch?v=WilM3zxng2A' },
     { text: 'Design Bundle Display', url: 'https://www.youtube.com/watch?v=l9XjGqqlp8k&t=2s' },
     { text: 'Edit Your Bundle', url: 'https://www.youtube.com/watch?v=UpzjZwsvCNc' },

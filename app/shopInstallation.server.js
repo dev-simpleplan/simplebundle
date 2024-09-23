@@ -1,6 +1,5 @@
 import prisma from "./db.server";
 
-
 export async function checkFirstInstall(shop) {
     try {
         const installation = await prisma.shopInstallation.findUnique({

@@ -15,16 +15,18 @@ import prisma from "../db.server";
 import { UPDATE_PRODUCT_MUTATION } from "../api/UPDATE_PRODUCT_MUTATION";
 import { DELETE_PRODUCT_MUTATION } from "../api/DELETE_PRODUCT_MUTATION";
 import { handleGraphQLResponse } from "../utils/sharedUtils";
-import { submitToGoogleSheets } from "../server/google-spreadsheet.server";
 import { Spinner } from "@shopify/polaris";
 import { REGISTER } from "../api/REGISTER";
 import { fetchShopInfo } from "../fetchShopInfo.server";
 import {
+  sendSupportSlackNotification,
+  sendSlackNotification,
+} from "../sendSlackNotification.server";
+import {
   checkFirstInstall,
   createShopInstallation,
   createShopifyStore,
-} from "../shopInstallation";
-import { sendSlackNotification } from "../sendSlackNotification";
+} from "../shopInstallation.server";
 
 export async function loader({ request }) {
   const { session, admin } = await authenticate.admin(request);
@@ -121,7 +123,7 @@ export async function action({ request }) {
         );
       }
 
-      const result = await submitToGoogleSheets({
+      const result = await sendSupportSlackNotification({
         email,
         message,
         requestType,
@@ -129,7 +131,7 @@ export async function action({ request }) {
         shopDomain,
       });
 
-      if (result.success) {
+      if (result.ok) {
         return json({
           success: true,
           message: "Support request submitted successfully",

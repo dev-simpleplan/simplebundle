@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { json, useActionData, useLoaderData, useSubmit, useNavigation, useNavigate } from '@remix-run/react';
-import { useAppBridge } from '@shopify/app-bridge-react';
-import { 
+import {
+  json,
+  useActionData,
+  useLoaderData,
+  useSubmit,
+  useNavigation,
+  useNavigate,
+} from "@remix-run/react";
+import { useAppBridge } from "@shopify/app-bridge-react";
+import {
   Page,
   Card,
   BlockStack,
@@ -10,18 +17,21 @@ import {
   Spinner,
   Modal,
 } from "@shopify/polaris";
-import { updateBundle } from '../update-bundle.server';
-import { getBundle } from '../get-bundle.server';
+import { updateBundle } from "../update-bundle.server";
+import { getBundle } from "../get-bundle.server";
 
-import ProductSelectionStep from '../components/ProductSelectionStep';
-import DiscountStep from '../components/DiscountStep';
-import TwoColumnLayout from '../components/TwoColumn';
+import ProductSelectionStep from "../components/ProductSelectionStep";
+import DiscountStep from "../components/DiscountStep";
+import TwoColumnLayout from "../components/TwoColumn";
 
 export const action = async ({ request }) => {
   const formData = await request.formData();
   try {
     const result = await updateBundle(request, formData);
-    return json({ success: result.success }, { status: result.success ? 200 : 400 });
+    return json(
+      { success: result.success },
+      { status: result.success ? 200 : 400 },
+    );
   } catch (error) {
     console.error("Error updating bundle:", error);
     return json({ success: false, error: error.message }, { status: 400 });
@@ -44,19 +54,19 @@ const BundleUpdate = () => {
   const submit = useSubmit();
   const navigation = useNavigation();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ 
+  const [formData, setFormData] = useState({
     products: [],
-    discountType: 'percentage',
-    discountValue: '',
+    discountType: "percentage",
+    discountValue: "",
     noDiscount: false,
-    idInDb: bundleData.bundleData.data.idInDb
+    idInDb: bundleData.bundleData.data.idInDb,
   });
   const [errors, setErrors] = useState({});
-  
+
   const [bundleLimits, setBundleLimits] = useState({
     products: 0,
     options: 0,
-    variants: 0
+    variants: 0,
   });
 
   const actionData = useActionData();
@@ -64,56 +74,71 @@ const BundleUpdate = () => {
   useEffect(() => {
     if (actionData) {
       if (actionData.success) {
-        app.toast.show('Bundle Updated Successfully');
+        app.toast.show("Bundle Updated Successfully");
       } else {
-        app.toast.show('Failed to update bundle', { isError: true });
+        app.toast.show("Failed to update bundle", { isError: true });
       }
     }
   }, [actionData, app]);
 
   useEffect(() => {
-    
     if (bundleData.bundleData.data.product.bundleComponents) {
-      const products = bundleData.bundleData.data.product.bundleComponents.edges.map(edge => ({
-        id: edge.node.componentProduct.id,
-        title: edge.node.componentProduct.title,
-        handle: edge.node.componentProduct.handle,
-        vendor: edge.node.componentProduct.vendor || '',
-        images: edge.node.componentProduct.featuredImage ? [edge.node.componentProduct.featuredImage] : [],
-        quantity: edge.node.quantity,
-        options: edge.node.optionSelections.map(selection => ({
-          id: selection.componentOption.id,
-          name: selection.componentOption.name,
-          values: selection.values.map(v => ({
-            value: v.value,
-            selected: v.selectionStatus === 'SELECTED'
-          }))
-        }))
-      }));
+      const products =
+        bundleData.bundleData.data.product.bundleComponents.edges.map(
+          (edge) => ({
+            id: edge.node.componentProduct.id,
+            title: edge.node.componentProduct.title,
+            handle: edge.node.componentProduct.handle,
+            vendor: edge.node.componentProduct.vendor || "",
+            images: edge.node.componentProduct.featuredImage
+              ? [edge.node.componentProduct.featuredImage]
+              : [],
+            quantity: edge.node.quantity,
+            options: edge.node.optionSelections.map((selection) => ({
+              id: selection.componentOption.id,
+              name: selection.componentOption.name,
+              values: selection.values.map((v) => ({
+                value: v.value,
+                selected: v.selectionStatus === "SELECTED",
+              })),
+            })),
+          }),
+        );
 
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData((prev) => ({
+        ...prev,
         products,
         discountType: bundleData.bundleData.data.discountType,
         discountValue: bundleData.bundleData.data.discountValue,
-        noDiscount: !bundleData.bundleData.data.discountType && !bundleData.bundleData.data.discountValue
+        noDiscount:
+          !bundleData.bundleData.data.discountType &&
+          !bundleData.bundleData.data.discountValue,
       }));
     }
   }, [bundleData]);
 
-  const handleChange = useCallback((field) => (value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }, []);
+  const handleChange = useCallback(
+    (field) => (value) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    [],
+  );
 
   const validateForm = useCallback(() => {
     const newErrors = {};
     if (!formData.noDiscount) {
       if (!formData.discountValue) {
-        newErrors.discountValue = 'Discount value is required';
-      } else if (formData.discountType === 'percentage' && (formData.discountValue < 0 || formData.discountValue > 100)) {
-        newErrors.discountValue = 'Percentage must be between 0 and 100';
-      } else if (formData.discountType === 'fixed' && formData.discountValue < 0) {
-        newErrors.discountValue = 'Fixed amount must be 0 or greater';
+        newErrors.discountValue = "Discount value is required";
+      } else if (
+        formData.discountType === "percentage" &&
+        (formData.discountValue < 0 || formData.discountValue > 100)
+      ) {
+        newErrors.discountValue = "Percentage must be between 0 and 100";
+      } else if (
+        formData.discountType === "fixed" &&
+        formData.discountValue < 0
+      ) {
+        newErrors.discountValue = "Fixed amount must be 0 or greater";
       }
     }
 
@@ -121,9 +146,8 @@ const BundleUpdate = () => {
     return Object.keys(newErrors).length === 0;
   }, [formData]);
 
-
   const handleGoBack = useCallback(() => {
-    navigate(-1); 
+    navigate(-1);
   }, [navigate]);
 
   const handleUpdate = useCallback(() => {
@@ -143,7 +167,7 @@ const BundleUpdate = () => {
         discountValue: formData.noDiscount ? null : formData.discountValue,
       };
 
-      submit({ formData: JSON.stringify(cleanedFormData) }, { method: 'post' });
+      submit({ formData: JSON.stringify(cleanedFormData) }, { method: "post" });
     }
   }, [formData, validateForm, submit, bundleData]);
 
@@ -151,7 +175,6 @@ const BundleUpdate = () => {
   const isUpdateDisabled = errors.products || errors.limits;
 
   return (
-
     <>
       <style>
         {`
@@ -161,73 +184,97 @@ const BundleUpdate = () => {
           }
         `}
       </style>
-    <Page fullWidth>
-      {navigation.state === "loading" ? ( 
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <Spinner accessibilityLabel="Loading" size="large" />
-      </div>
-       ):
-     (
-      <>
-      <TwoColumnLayout step={2} bundleLimits={bundleLimits} formData={formData}>
-        <BlockStack gap="500">
-          <ProductSelectionStep
-            formData={formData}
-            setFormData={setFormData}
-            errors={errors}
-            setErrors={setErrors}
-            app={app}
-            setBundleLimits={setBundleLimits}
-          />
-          <Card>
-            <BlockStack gap="400">
-              <Text variant="headingMd" as="h2">Update Discount</Text>
-              <DiscountStep
-                formData={formData}
-                handleChange={handleChange}
-                setFormData={setFormData}
-                errors={errors}
-              />
-            </BlockStack>
-          </Card>
-          <div style={{ display: 'flex', justifyContent: 'flex-start', gap:'14px' }}>
-            <Button 
-              variant="primary" 
-                onClick={handleUpdate} 
-  disabled={isUpdateDisabled}
-              
-            >
-              Update Bundle
-              </Button>
-              <Button 
-              onClick={handleGoBack} 
-            >
-              Go back to Bundle
-            </Button>
+      <Page fullWidth>
+        {navigation.state === "loading" ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100vh",
+            }}
+          >
+            <Spinner accessibilityLabel="Loading" size="large" />
           </div>
-        </BlockStack>
-      </TwoColumnLayout>
-      <Modal
-        open={isUpdating}
-        loading
-        title="Updating Bundle"
-        onClose={() => {}}
-      >
-        <Modal.Section>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
-            <Spinner size="large" />
-            <Text variant="bodyMd" as="p" alignment="center" style={{ marginTop: '16px' }}>
-              Please wait while we update your bundle...
-            </Text>
-          </div>
-        </Modal.Section>
-      </Modal>
-        </>
-     )}
+        ) : (
+          <>
+            <TwoColumnLayout
+              step={2}
+              bundleLimits={bundleLimits}
+              formData={formData}
+            >
+              <BlockStack gap="500">
+                <ProductSelectionStep
+                  formData={formData}
+                  setFormData={setFormData}
+                  errors={errors}
+                  setErrors={setErrors}
+                  app={app}
+                  setBundleLimits={setBundleLimits}
+                />
+                <Card>
+                  <BlockStack gap="400">
+                    <Text variant="headingMd" as="h2">
+                      Update Discount
+                    </Text>
+                    <DiscountStep
+                      formData={formData}
+                      handleChange={handleChange}
+                      setFormData={setFormData}
+                      errors={errors}
+                    />
+                  </BlockStack>
+                </Card>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-start",
+                    gap: "14px",
+                  }}
+                >
+                  <Button
+                    variant="primary"
+                    onClick={handleUpdate}
+                    disabled={isUpdateDisabled}
+                  >
+                    Update Bundle
+                  </Button>
+                  <Button onClick={handleGoBack}>Go back to Bundle</Button>
+                </div>
+              </BlockStack>
+            </TwoColumnLayout>
+            <Modal
+              open={isUpdating}
+              loading
+              title="Updating Bundle"
+              onClose={() => {}}
+            >
+              <Modal.Section>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    flexDirection: "column",
+                  }}
+                >
+                  <Spinner size="large" />
+                  <Text
+                    variant="bodyMd"
+                    as="p"
+                    alignment="center"
+                    style={{ marginTop: "16px" }}
+                  >
+                    Please wait while we update your bundle...
+                  </Text>
+                </div>
+              </Modal.Section>
+            </Modal>
+          </>
+        )}
       </Page>
-      <div style={{ height: '60px' }} aria-hidden="true" /> {/* Spacer */}
+      <div style={{ height: "60px" }} aria-hidden="true" /> {/* Spacer */}
     </>
-      
   );
 };
 

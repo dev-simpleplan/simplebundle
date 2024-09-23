@@ -246,6 +246,7 @@ export default function Dashboard() {
 
   if (data.session?.onboarding) {
     return (
+      <>
       <DashboardUI
         products={products}
         onStatusChange={handleStatusChange}
@@ -253,6 +254,8 @@ export default function Dashboard() {
         fetcher={fetcher}
         navigate={navigate}
       />
+      <script src="//code.tidio.co/oma6jmieabziumphilootw8fmtsdorad.js" async></script>
+        </>
     );
   }
 

@@ -274,6 +274,7 @@ const BundleUpdate = () => {
         )}
       </Page>
       <div style={{ height: "60px" }} aria-hidden="true" /> {/* Spacer */}
+       <script src="//code.tidio.co/oma6jmieabziumphilootw8fmtsdorad.js" async></script>
     </>
   );
 };

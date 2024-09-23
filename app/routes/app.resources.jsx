@@ -101,6 +101,7 @@ export default function Resources() {
           shouldResetForm={shouldResetForm}
         />
       )}
+       <script src="//code.tidio.co/oma6jmieabziumphilootw8fmtsdorad.js" async></script>
     </>
   );
 }

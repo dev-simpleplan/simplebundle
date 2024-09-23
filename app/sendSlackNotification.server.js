@@ -106,3 +106,56 @@ function calculateStoreAge(createdAt) {
         return `${years} year${years > 1 ? 's' : ''}`;
     }
 }
+
+
+export async function sendSupportSlackNotification({ email, message, requestType, timestamp, shopDomain }) {
+    return await app.client.chat.postMessage({
+        token: process.env.SLACK_BOT_TOKEN,
+        channel: 'simplebundle-support',
+        text: 'New Support Request',
+        blocks: [
+            {
+                type: "header",
+                text: {
+                    type: "plain_text",
+                    text: "New Support Request",
+                    emoji: true
+                }
+            },
+            {
+                type: "section",
+                fields: [
+                    {
+                        type: "mrkdwn",
+                        text: `*Shop Domain:*\n${shopDomain}`
+                    },
+                    {
+                        type: "mrkdwn",
+                        text: `*Email:*\n${email}`
+                    }
+                ]
+            },
+            {
+                type: "section",
+                fields: [
+                    {
+                        type: "mrkdwn",
+                        text: `*Request Type:*\n${requestType}`
+                    },
+                    {
+                        type: "mrkdwn",
+                        text: `*Timestamp:*\n${timestamp}`
+                    }
+                ]
+            },
+            {
+                type: "section",
+                text: {
+                    type: "mrkdwn",
+                    text: `*Message:*\n${message}`
+                }
+            }
+        ]
+    });
+
+}

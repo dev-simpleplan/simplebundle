@@ -4,8 +4,8 @@ import { useActionData, useSubmit, useNavigation } from "@remix-run/react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import ResourceUI from "../components/ResourceUI";
 import { Spinner } from "@shopify/polaris";
-import { submitToGoogleSheets } from "../server/google-spreadsheet.server";
 import { authenticate } from "../shopify.server";
+import { sendSupportSlackNotification } from "../sendSlackNotification.server";
 
 export async function action({ request }) {
   const { session } = await authenticate.admin(request);
@@ -17,12 +17,20 @@ export async function action({ request }) {
   const shopDomain = session.shop;
 
   try {
-    const result = await submitToGoogleSheets({ email, message, requestType, timestamp, shopDomain });
-    
-    if (result.success) {
+    const result = await sendSupportSlackNotification({
+      email,
+      message,
+      requestType,
+      timestamp,
+      shopDomain,
+    });
+
+    if (result.ok) {
       return json({ success: true });
     } else {
-      throw new Error(result.error || "Failed to submit to Google Sheets");
+      throw new Error(
+        result.error || "Failed to submit support request please try again..",
+      );
     }
   } catch (error) {
     return json({ error: error.message }, { status: 500 });
@@ -41,11 +49,13 @@ export default function Resources() {
   useEffect(() => {
     if (actionData) {
       if (actionData.success) {
-        app.toast.show('Support request sent successfully');
+        app.toast.show("Support request sent successfully");
         setIsModalOpen(false);
         setShouldResetForm(true);
       } else if (actionData.error) {
-        app.toast.show('Failed to send support request: ' + actionData.error, { isError: true });
+        app.toast.show("Failed to send support request: " + actionData.error, {
+          isError: true,
+        });
       }
       setIsSubmitting(false);
     }
@@ -69,22 +79,28 @@ export default function Resources() {
 
   return (
     <>
-    {navigation.state === "loading" ? ( 
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-      <Spinner accessibilityLabel="Loading" size="large" />
-    </div>
-     ):
-   (
-    <ResourceUI 
-      onSupportSubmit={handleSupportSubmit} 
-      formErrors={actionData?.errors}
-      isSubmitting={isSubmitting}
-      isModalOpen={isModalOpen}
-      onModalOpen={handleModalOpen}
-      onModalClose={handleModalClose}
-      shouldResetForm={shouldResetForm}
-    />
-    )}
+      {navigation.state === "loading" ? (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          <Spinner accessibilityLabel="Loading" size="large" />
+        </div>
+      ) : (
+        <ResourceUI
+          onSupportSubmit={handleSupportSubmit}
+          formErrors={actionData?.errors}
+          isSubmitting={isSubmitting}
+          isModalOpen={isModalOpen}
+          onModalOpen={handleModalOpen}
+          onModalClose={handleModalClose}
+          shouldResetForm={shouldResetForm}
+        />
+      )}
     </>
   );
 }

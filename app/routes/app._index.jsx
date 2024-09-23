@@ -60,7 +60,6 @@ export async function loader({ request }) {
 
   const response = await admin.graphql(REGISTER);
   const jsonResponse = await response.json(); // Await the JSON response
-  console.log(jsonResponse); // Log the actual JSON response
 
   const bundleFromDb = await prisma.bundle.findMany({
     where: {

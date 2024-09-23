@@ -1,5 +1,6 @@
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
+import { sendUninstallNotification } from "../sendSlackNotification.server";
 
 export const action = async ({ request }) => {
   const { topic, shop, session, admin, payload } =
@@ -156,12 +157,56 @@ export const action = async ({ request }) => {
       break;
     case "APP_UNINSTALLED":
       if (session) {
-        await db.session.delete({
-          where: {
-            id: session.id,
-          },
-        });
-        console.log("Deleted app");
+        const { shop } = session;
+        let deletedStoreInfo = null;
+        const shop_url = `https://${shop}`;
+
+        try {
+          // Delete the session
+          await db.session.delete({
+            where: {
+              id: session.id,
+            },
+          });
+
+          // Fetch the ShopifyStore information before deletion
+          deletedStoreInfo = await db.shopifyStore.findUnique({
+            where: { shop: shop_url },
+          });
+
+          // Delete the ShopifyStore first
+          if (deletedStoreInfo) {
+            await db.shopifyStore.delete({
+              where: { shop: shop_url },
+            });
+          }
+
+          // Now delete the ShopInstallation
+          await db.shopInstallation.delete({
+            where: { shop: shop_url },
+          });
+
+          // Delete all Bundles associated with this session
+          await db.bundle.deleteMany({
+            where: { userId: session.id },
+          });
+
+          // Delete all Analytics associated with this session
+          await db.analytics.deleteMany({
+            where: { userId: session.id },
+          });
+
+          console.log(`Uninstallation completed for shop: ${shop_url}`);
+
+          sendUninstallNotification(deletedStoreInfo);
+        } catch (error) {
+          console.error(
+            `Error during uninstallation for shop ${shop_url}:`,
+            error,
+          );
+        }
+      } else {
+        console.log("No session found for uninstallation");
       }
 
       break;

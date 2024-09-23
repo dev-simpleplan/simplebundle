@@ -9,8 +9,6 @@ export async function fetchShopInfo(request) {
     const shopResponse = await admin.graphql(FETCH_SHOP_INFO);
     const shopDetails = await handleGraphQLResponse(shopResponse, "Error fetching shop information");
   
-    console.log("sd:", shopDetails);
-
     return {
       success: true,
       message: "Shop information fetched successfully",

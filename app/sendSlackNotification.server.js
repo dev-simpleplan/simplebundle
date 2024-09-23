@@ -8,6 +8,7 @@ const app = new Slack.App({
 
 
 export async function sendSlackNotification(storeData) {
+
     // Calculate store age
     const storeAge = calculateStoreAge(storeData.createdAt);
 
@@ -154,6 +155,45 @@ export async function sendSupportSlackNotification({ email, message, requestType
                     type: "mrkdwn",
                     text: `*Message:*\n${message}`
                 }
+            }
+        ]
+    });
+
+}
+
+
+export async function sendUninstallNotification(deletedStoreInfo) {
+
+    await app.client.chat.postMessage({
+        token: process.env.SLACK_BOT_TOKEN,
+        channel: 'shopify-product-alerts',
+        text: 'App Uninstalled',
+        blocks: [
+            {
+                type: "header",
+                text: {
+                    type: "plain_text",
+                    text: "Store uninstalled SimpleBundleApp",
+                    emoji: true
+                }
+            },
+            {
+                type: "section",
+                fields: [
+                    {
+                        type: "mrkdwn",
+                        text: `*Shop Domain:*\n${deletedStoreInfo.shop}`
+                    },
+                    {
+                        type: "mrkdwn",
+                        text: `*Email:*\n${deletedStoreInfo.email}`
+                    },
+                    {
+                        type: "mrkdwn",
+                        text: `*Name:*\n${deletedStoreInfo.name}`
+                    }
+
+                ]
             }
         ]
     });

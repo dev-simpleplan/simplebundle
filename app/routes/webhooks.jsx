@@ -160,49 +160,52 @@ export const action = async ({ request }) => {
         const { shop } = session;
         let deletedStoreInfo = null;
         const shop_url = `https://${shop}`;
-
+    
         try {
-          // Delete the session
-          await db.session.delete({
-            where: {
-              id: session.id,
-            },
-          });
-
-          // Fetch the ShopifyStore information before deletion
-          deletedStoreInfo = await db.shopifyStore.findUnique({
-            where: { shop: shop_url },
-          });
-
-          // Delete the ShopifyStore first
-          if (deletedStoreInfo) {
-            await db.shopifyStore.delete({
+          // Start a transaction
+          await db.$transaction(async (prisma) => {
+            // Delete all Bundles associated with this session
+            await prisma.bundle.deleteMany({
+              where: { userId: session.id },
+            });
+    
+            // Delete all Analytics associated with this session
+            await prisma.analytics.deleteMany({
+              where: { userId: session.id },
+            });
+    
+            // Delete the session
+            await prisma.session.delete({
+              where: {
+                id: session.id,
+              },
+            });
+    
+            // Fetch the ShopifyStore information before deletion
+            deletedStoreInfo = await prisma.shopifyStore.findUnique({
               where: { shop: shop_url },
             });
-          }
-
-          // Now delete the ShopInstallation
-          await db.shopInstallation.delete({
-            where: { shop: shop_url },
+    
+            // Delete the ShopifyStore
+            if (deletedStoreInfo) {
+              await prisma.shopifyStore.delete({
+                where: { shop: shop_url },
+              });
+            }
+    
+            // Delete the ShopInstallation
+            await prisma.shopInstallation.delete({
+              where: { shop: shop_url },
+            });
           });
-
-          // Delete all Bundles associated with this session
-          await db.bundle.deleteMany({
-            where: { userId: session.id },
-          });
-
-          // Delete all Analytics associated with this session
-          await db.analytics.deleteMany({
-            where: { userId: session.id },
-          });
-
+    
           console.log(`Uninstallation completed for shop: ${shop_url}`);
-
+    
           sendUninstallNotification(deletedStoreInfo);
         } catch (error) {
           console.error(
             `Error during uninstallation for shop ${shop_url}:`,
-            error,
+            error
           );
         }
       } else {

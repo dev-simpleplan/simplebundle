@@ -32,6 +32,7 @@
     "@shopify/shopify-app-remix": "^3.0.2",
     "@shopify/shopify-app-session-storage-prisma": "^5.0.2",
     "@slack/bolt": "^3.21.4",
+    "async-mutex": "^0.5.0",
     "axios": "^1.7.4",
     "chart.js": "^4.4.3",
     "form-data": "^4.0.0",

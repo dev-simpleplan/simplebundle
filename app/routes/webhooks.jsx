@@ -1,6 +1,9 @@
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
-import { sendUninstallNotification } from "../sendSlackNotification.server";
+import {
+  failedUninstallNotification,
+  sendUninstallNotification,
+} from "../sendSlackNotification.server";
 
 export const action = async ({ request }) => {
   const { topic, shop, session, admin, payload } =
@@ -160,7 +163,7 @@ export const action = async ({ request }) => {
         const { shop } = session;
         let deletedStoreInfo = null;
         const shop_url = `https://${shop}`;
-    
+
         try {
           // Start a transaction
           await db.$transaction(async (prisma) => {
@@ -168,45 +171,46 @@ export const action = async ({ request }) => {
             await prisma.bundle.deleteMany({
               where: { userId: session.id },
             });
-    
+
             // Delete all Analytics associated with this session
             await prisma.analytics.deleteMany({
               where: { userId: session.id },
             });
-    
+
             // Delete the session
             await prisma.session.delete({
               where: {
                 id: session.id,
               },
             });
-    
+
             // Fetch the ShopifyStore information before deletion
             deletedStoreInfo = await prisma.shopifyStore.findUnique({
               where: { shop: shop_url },
             });
-    
+
             // Delete the ShopifyStore
             if (deletedStoreInfo) {
               await prisma.shopifyStore.delete({
                 where: { shop: shop_url },
               });
             }
-    
+
             // Delete the ShopInstallation
             await prisma.shopInstallation.delete({
               where: { shop: shop_url },
             });
           });
-    
+
           console.log(`Uninstallation completed for shop: ${shop_url}`);
-    
+
           sendUninstallNotification(deletedStoreInfo);
         } catch (error) {
           console.error(
             `Error during uninstallation for shop ${shop_url}:`,
-            error
+            error,
           );
+          await failedUninstallNotification(shop_url, error);
         }
       } else {
         console.log("No session found for uninstallation");

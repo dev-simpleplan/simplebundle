@@ -4,15 +4,17 @@ import {
   failedUninstallNotification,
   sendUninstallNotification,
 } from "../sendSlackNotification.server";
-
+import { Mutex } from "async-mutex";
+// In-memory map to store mutexes for each shop
+const shopMutexes = new Map();
+// In-memory set to track shops currently uninstalling
+const uninstallingShops = new Set();
 export const action = async ({ request }) => {
   const { topic, shop, session, admin, payload } =
     await authenticate.webhook(request);
-
   if (!admin) {
     throw new Response();
   }
-
   // The topics handled here should be declared in the shopify.app.toml.
   // More info: https://shopify.dev/docs/apps/build/cli-for-apps/app-configuration
   switch (topic) {
@@ -26,19 +28,16 @@ export const action = async ({ request }) => {
         },
       });
       const updatedProductId = payload.admin_graphql_api_id;
-
       for (const bundle of allBundles.bundles) {
         const bundleProducts = bundle.products;
         const bundleProduct = bundleProducts.find(
           (product) => product.id === updatedProductId,
         );
-
         if (bundleProduct) {
           for (const payloadVariant of payload.variants) {
             const bundleVariant = bundleProduct.variants.find(
               (v) => v.id === payloadVariant.admin_graphql_api_id,
             );
-
             if (bundleVariant) {
               if (
                 payloadVariant.price !== bundleVariant.price ||
@@ -78,13 +77,11 @@ export const action = async ({ request }) => {
     case "ORDERS_CREATE":
       const subtotalPrice = payload.subtotal_price;
       const currency = payload.currency;
-
       try {
         // Fetch the current Analytics record for the user
         const currentAnalytics = await db.analytics.findFirst({
           where: { userId: session.id },
         });
-
         if (currentAnalytics) {
           // If an Analytics record exists, update it
           const updatedRevenue = (
@@ -93,7 +90,6 @@ export const action = async ({ request }) => {
           const updatedOrders = (
             parseInt(currentAnalytics.orders) + 1
           ).toString();
-
           await db.analytics.update({
             where: { id: currentAnalytics.id },
             data: {
@@ -102,7 +98,6 @@ export const action = async ({ request }) => {
               currency: currency,
             },
           });
-
           console.log(
             `Updated Analytics: Revenue: ${updatedRevenue} ${currency}, Orders: ${updatedOrders}`,
           );
@@ -115,7 +110,6 @@ export const action = async ({ request }) => {
               userId: session.id,
             },
           });
-
           console.log(
             `Created new Analytics: Revenue: ${subtotalPrice} ${currency}, Orders: 1`,
           );
@@ -123,7 +117,6 @@ export const action = async ({ request }) => {
       } catch (error) {
         console.error("Error updating Analytics:", error);
       }
-
       break;
     case "PRODUCTS_DELETE":
       const deleteProductId = `gid://shopify/Product/${payload.id}`;
@@ -136,7 +129,6 @@ export const action = async ({ request }) => {
             bundles: true,
           },
         });
-
         if (!sessionWithBundles) {
           console.log("Session not found");
           return;
@@ -144,7 +136,6 @@ export const action = async ({ request }) => {
         const matchingBundle = sessionWithBundles.bundles.find(
           (bundle) => bundle.ProductBundleId === deleteProductId,
         );
-
         if (matchingBundle) {
           await db.bundle.delete({
             where: {
@@ -159,63 +150,84 @@ export const action = async ({ request }) => {
       }
       break;
     case "APP_UNINSTALLED":
-      if (session) {
-        const { shop } = session;
-        let deletedStoreInfo = null;
-        const shop_url = `https://${shop}`;
-
-        try {
-          // Start a transaction
-          await db.$transaction(async (prisma) => {
-            // Delete all Bundles associated with this session
-            await prisma.bundle.deleteMany({
-              where: { userId: session.id },
-            });
-
-            // Delete all Analytics associated with this session
-            await prisma.analytics.deleteMany({
-              where: { userId: session.id },
-            });
-
-            // Delete the session
-            await prisma.session.delete({
-              where: {
-                id: session.id,
-              },
-            });
-
-            // Fetch the ShopifyStore information before deletion
-            deletedStoreInfo = await prisma.shopifyStore.findUnique({
-              where: { shop: shop_url },
-            });
-
-            // Delete the ShopifyStore
-            if (deletedStoreInfo) {
-              await prisma.shopifyStore.delete({
-                where: { shop: shop_url },
-              });
-            }
-
-            // Delete the ShopInstallation
-            await prisma.shopInstallation.delete({
-              where: { shop: shop_url },
-            });
-          });
-
-          console.log(`Uninstallation completed for shop: ${shop_url}`);
-
-          sendUninstallNotification(deletedStoreInfo);
-        } catch (error) {
-          console.error(
-            `Error during uninstallation for shop ${shop_url}:`,
-            error,
-          );
-          await failedUninstallNotification(shop_url, error);
-        }
-      } else {
+      if (!session) {
         console.log("No session found for uninstallation");
+        return;
       }
-
+      const { shop } = session;
+      const shop_url = `https://${shop}`;
+      // Get or create a mutex for this shop
+      let mutex = shopMutexes.get(shop);
+      if (!mutex) {
+        mutex = new Mutex();
+        shopMutexes.set(shop, mutex);
+      }
+      // Acquire the lock
+      const release = await mutex.acquire();
+      try {
+        // Check if uninstallation is already in progress
+        if (uninstallingShops.has(shop)) {
+          console.log(
+            `Uninstallation already in progress for shop: ${shop_url}`,
+          );
+          return;
+        }
+        // Mark shop as uninstalling
+        uninstallingShops.add(shop);
+        let deletedStoreInfo = null;
+        // Start a transaction
+        await db.$transaction(async (prisma) => {
+          // Check if the shop installation still exists
+          const shopInstallation = await prisma.shopInstallation.findUnique({
+            where: { shop: shop_url },
+          });
+          if (!shopInstallation) {
+            console.log(`No installation found for shop: ${shop_url}`);
+            return;
+          }
+          // Delete all Bundles associated with this session
+          await prisma.bundle.deleteMany({
+            where: { userId: session.id },
+          });
+          // Delete all Analytics associated with this session
+          await prisma.analytics.deleteMany({
+            where: { userId: session.id },
+          });
+          // Delete the session
+          await prisma.session.delete({
+            where: {
+              id: session.id,
+            },
+          });
+          // Fetch the ShopifyStore information before deletion
+          deletedStoreInfo = await prisma.shopifyStore.findUnique({
+            where: { shop: shop_url },
+          });
+          // Delete the ShopifyStore
+          if (deletedStoreInfo) {
+            await prisma.shopifyStore.delete({
+              where: { shop: shop_url },
+            });
+          }
+          // Delete the ShopInstallation
+          await prisma.shopInstallation.delete({
+            where: { shop: shop_url },
+          });
+        });
+        console.log(`Uninstallation completed for shop: ${shop_url}`);
+        sendUninstallNotification(deletedStoreInfo);
+      } catch (error) {
+        console.error(
+          `Error during uninstallation for shop ${shop_url}:`,
+          error,
+        );
+        await failedUninstallNotification(shop_url, error);
+      } finally {
+        // Remove shop from uninstalling set
+        uninstallingShops.delete(shop);
+        // Release the lock
+        release();
+      }
       break;
     case "CUSTOMERS_DATA_REQUEST":
     case "CUSTOMERS_REDACT":
@@ -223,6 +235,5 @@ export const action = async ({ request }) => {
     default:
       throw new Response("Unhandled webhook topic", { status: 404 });
   }
-
   throw new Response();
 };

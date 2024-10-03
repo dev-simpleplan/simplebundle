@@ -1,12 +1,18 @@
 import Slack from '@slack/bolt';
+
 const app = new Slack.App({
+
     signingSecret: process.env.SLACK_SIGNING_SECRET,
     token: process.env.SLACK_BOT_TOKEN
 });
+
+
 export async function sendSlackNotification(storeData) {
+
     try {
         // Calculate store age
         const storeAge = calculateStoreAge(storeData.createdAt);
+
         await app.client.chat.postMessage({
             token: process.env.SLACK_BOT_TOKEN,
             channel: 'shopify-product-alerts',
@@ -87,12 +93,15 @@ export async function sendSlackNotification(storeData) {
     } catch (slackError) {
         console.error('Failed to send Slack notification:', slackError);
     }
+
 }
+
 function calculateStoreAge(createdAt) {
     const now = new Date();
     const created = new Date(createdAt);
     const diffTime = Math.abs(now - created);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
     if (diffDays < 30) {
         return `${diffDays} days`;
     } else if (diffDays < 365) {
@@ -103,7 +112,10 @@ function calculateStoreAge(createdAt) {
         return `${years} year${years > 1 ? 's' : ''}`;
     }
 }
+
+
 export async function sendSupportSlackNotification({ email, message, requestType, timestamp, shopDomain }) {
+
     try {
         return await app.client.chat.postMessage({
             token: process.env.SLACK_BOT_TOKEN,
@@ -153,11 +165,17 @@ export async function sendSupportSlackNotification({ email, message, requestType
                 }
             ]
         });
+
     } catch (slackError) {
         console.error('Failed to send Slack notification:', slackError);
     }
+
+
 }
+
+
 export async function sendUninstallNotification(deletedStoreInfo) {
+
     try {
         await app.client.chat.postMessage({
             token: process.env.SLACK_BOT_TOKEN,
@@ -187,14 +205,19 @@ export async function sendUninstallNotification(deletedStoreInfo) {
                             type: "mrkdwn",
                             text: `*Name:*\n${deletedStoreInfo.name}`
                         }
+
                     ]
                 }
             ]
         });
+
     } catch (slackError) {
         console.error('Failed to send Slack notification:', slackError);
     }
+
+
 }
+
 export async function failedUninstallNotification(shop, error) {
     try {
         await app.client.chat.postMessage({
@@ -206,7 +229,7 @@ export async function failedUninstallNotification(shop, error) {
                     type: "header",
                     text: {
                         type: "plain_text",
-                        text: ":warning: SimpleBundleApp Uninstallation Failed",
+                        text: "⚠️ SimpleBundleApp Uninstallation Failed",
                         emoji: true
                     }
                 },
